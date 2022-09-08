@@ -329,10 +329,9 @@ func (p *Provider) transferAndVerify(ctx context.Context, pub event.Emitter, dea
 	if err := p.waitForTransferFinish(tctx, handler, pub, deal); err != nil {
 		// Note that the data transfer has automatic retries built in, so if
 		// it fails, it means it's already retried several times and we should
-		// surface the problem to the user so they can decide manually whether
-		// to keep retrying
+		// fail the deal
 		return &dealMakingError{
-			retry: smtypes.DealRetryManual,
+			retry: smtypes.DealRetryFatal,
 			error: fmt.Errorf("data-transfer failed: %w", err),
 		}
 	}

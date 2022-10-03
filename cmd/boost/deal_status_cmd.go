@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	bcli "github.com/filecoin-project/boost/cli"
 	"github.com/filecoin-project/boost/cli/node"
@@ -12,7 +13,6 @@ import (
 	"github.com/filecoin-project/boost/storagemarket/types"
 	"github.com/filecoin-project/boost/storagemarket/types/dealcheckpoints"
 	"github.com/filecoin-project/go-address"
-	lcli "github.com/filecoin-project/lotus/cli"
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 )
@@ -50,7 +50,12 @@ var dealStatusCmd = &cli.Command{
 			return err
 		}
 
-		api, closer, err := lcli.GetGatewayAPI(cctx)
+		maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+		}
+
+		api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
 		if err != nil {
 			return fmt.Errorf("cant setup gateway connection: %w", err)
 		}

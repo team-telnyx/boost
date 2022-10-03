@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	bcli "github.com/filecoin-project/boost/cli"
@@ -16,7 +17,6 @@ import (
 	// TODO: This multiaddr util library should probably live in its own repo
 	multiaddrutil "github.com/filecoin-project/go-legs/httpsync/multiaddr"
 	"github.com/filecoin-project/lotus/chain/types"
-	lcli "github.com/filecoin-project/lotus/cli"
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/urfave/cli/v2"
@@ -56,9 +56,14 @@ var libp2pInfoCmd = &cli.Command{
 			return fmt.Errorf("setting up CLI node: %w", err)
 		}
 
-		api, closer, err := lcli.GetGatewayAPI(cctx)
+		maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
 		if err != nil {
-			return fmt.Errorf("setting up gateway connection: %w", err)
+			return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+		}
+
+		api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
+		if err != nil {
+			return fmt.Errorf("cant setup gateway connection: %w", err)
 		}
 		defer closer()
 
@@ -143,7 +148,12 @@ var storageAskCmd = &cli.Command{
 			return err
 		}
 
-		api, closer, err := lcli.GetGatewayAPI(cctx)
+		maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+		}
+
+		api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
 		if err != nil {
 			return fmt.Errorf("cant setup gateway connection: %w", err)
 		}
@@ -230,7 +240,12 @@ var retrievalAskCmd = &cli.Command{
 			return err
 		}
 
-		api, closer, err := lcli.GetGatewayAPI(cctx)
+		maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+		}
+
+		api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
 		if err != nil {
 			return fmt.Errorf("cant setup gateway connection: %w", err)
 		}
@@ -318,7 +333,12 @@ var retrievalTransportsCmd = &cli.Command{
 			return err
 		}
 
-		api, closer, err := lcli.GetGatewayAPI(cctx)
+		maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+		}
+
+		api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
 		if err != nil {
 			return fmt.Errorf("cant setup gateway connection: %w", err)
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	bcli "github.com/filecoin-project/boost/cli"
@@ -18,7 +19,6 @@ import (
 	"github.com/filecoin-project/go-state-types/builtin/v8/market"
 	"github.com/filecoin-project/lotus/api"
 	chain_types "github.com/filecoin-project/lotus/chain/types"
-	lcli "github.com/filecoin-project/lotus/cli"
 	"github.com/google/uuid"
 	"github.com/ipfs/go-cid"
 	inet "github.com/libp2p/go-libp2p-core/network"
@@ -120,7 +120,12 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 		return err
 	}
 
-	api, closer, err := lcli.GetGatewayAPI(cctx)
+	maxRetries, err := strconv.ParseUint(cctx.String(cmd.FlagGWMaxRetry.Name), 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to read --max-gateway-retries: %w", err)
+	}
+
+	api, closer, err := getGatewayAPI(cctx, float64(maxRetries))
 	if err != nil {
 		return fmt.Errorf("cant setup gateway connection: %w", err)
 	}

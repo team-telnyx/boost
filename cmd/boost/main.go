@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	llog "log"
 	"os"
+	"time"
 
 	"github.com/filecoin-project/boost/cmd"
-
-	llog "log"
+	"github.com/filecoin-project/go-jsonrpc"
+	"github.com/filecoin-project/lotus/api"
+	lcli "github.com/filecoin-project/lotus/cli"
+	"github.com/jpillora/backoff"
 
 	"github.com/filecoin-project/boost/build"
 	cliutil "github.com/filecoin-project/boost/cli/util"
@@ -32,6 +36,7 @@ func main() {
 			cmd.FlagRepo,
 			cliutil.FlagVeryVerbose,
 			cmd.FlagJson,
+			cmd.FlagGWMaxRetry,
 		},
 		Commands: []*cli.Command{
 			initCmd,
@@ -70,4 +75,32 @@ func before(cctx *cli.Context) error {
 	cctx.App.Metadata["json"] = cctx.Bool("json")
 
 	return nil
+}
+
+func getGatewayAPI(cctx *cli.Context, maxRetries float64) (api.Gateway, jsonrpc.ClientCloser, error) {
+	b := &backoff.Backoff{
+		//These are the defaults
+		Min:    1 * time.Second,
+		Max:    60 * time.Second,
+		Factor: 2,
+		Jitter: false,
+	}
+
+	var api api.Gateway
+	var closer jsonrpc.ClientCloser
+	var err error
+	var nAttempt float64
+
+	for maxRetries > nAttempt {
+		api, closer, err = lcli.GetGatewayAPI(cctx)
+		if err == nil {
+			return api, closer, err
+		} else {
+			nAttempt = b.Attempt() + 1
+			d := b.Duration()
+			fmt.Printf("%s, reconnecting in %s\n", err, d)
+			time.Sleep(d)
+		}
+	}
+	return nil, nil, err
 }

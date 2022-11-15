@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"github.com/stretchr/testify/require"
 	"io"
 	"os"
 	"testing"
@@ -16,9 +17,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-func XTestCouchbaseService(t *testing.T) {
-	removeContainer := setupCouchbase(t)
-	defer removeContainer()
+func TestCouchbaseService(t *testing.T) {
+	setupCouchbase(t)
 
 	bdsvc := NewCouchbase(testCouchSettings)
 	err := bdsvc.Start(context.Background(), 8042)
@@ -26,9 +26,9 @@ func XTestCouchbaseService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cl := client.NewStore()
-	err = cl.Dial(context.Background(), "http://localhost:8042")
-	defer cl.Close(context.Background())
+	pdcl := client.NewStore()
+	err = pdcl.Dial(context.Background(), "http://localhost:8042")
+	defer pdcl.Close(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func XTestCouchbaseService(t *testing.T) {
 		t.Fatal(err)
 	}
 	dealInfo := model.DealInfo{}
-	err = cl.AddDealForPiece(context.TODO(), pieceCid, dealInfo)
+	err = pdcl.AddDealForPiece(context.TODO(), pieceCid, dealInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,20 +47,17 @@ func XTestCouchbaseService(t *testing.T) {
 	time.Sleep(2 * time.Second)
 }
 
-func setupCouchbase(t *testing.T) func() {
+func setupCouchbase(t *testing.T) {
 	ctx := context.Background()
-	cli, err := cl.NewEnvClient()
-	if err != nil {
-		t.Fatal(err)
-	}
+	cli, err := cl.NewClientWithOpts()
+	require.NoError(t, err)
 
 	imageName := "couchbase"
 
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	io.Copy(os.Stdout, out)
+	require.NoError(t, err)
+	_, err = io.Copy(os.Stdout, out)
+	require.NoError(t, err)
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
@@ -86,24 +83,23 @@ func setupCouchbase(t *testing.T) func() {
 			nat.Port("11211"): {{HostIP: "127.0.0.1", HostPort: "11211"}},
 		},
 	}, nil, nil, "")
+	require.NoError(t, err)
 
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	require.NoError(t, err)
 
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		t.Fatal(err)
-	}
+	t.Cleanup(func() {
+		_ = cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
+	})
 
-	cleanup := func() {
-		err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
+	command := []string{""}
+	execCreateResp, err := cli.ContainerExecCreate(ctx, resp.ID, types.ExecConfig{Cmd: command})
+	require.NoError(t, err)
+
+	execResp, err := cli.ContainerExecAttach(ctx, execCreateResp.ID, types.ExecStartCheck{})
+	require.NoError(t, err)
+	defer execResp.Close()
 
 	// TODO: setup admin password
 	// TODO: create bucket -- see: https://docs.couchbase.com/server/current/manage/manage-buckets/create-bucket.html
-
-	return cleanup
 }

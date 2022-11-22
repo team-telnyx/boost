@@ -75,6 +75,9 @@ debug: build-go
 calibnet-go: GOFLAGS+=-tags=calibnet
 calibnet-go: build-go
 
+wallabynet-go: GOFLAGS+=-tags=wallabynet
+wallabynet-go: build-go
+
 deps: $(BUILD_DEPS)
 .PHONY: deps
 
@@ -138,6 +141,9 @@ build: react build-go
 
 calibnet: react calibnet-go
 .PHONY: calibnet
+
+wallabynet: react wallabynet-go
+.PHONY: wallabynet
 
 install: install-boost install-devnet
 

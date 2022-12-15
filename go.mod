@@ -4,6 +4,8 @@ go 1.18
 
 replace github.com/filecoin-project/filecoin-ffi => ./extern/filecoin-ffi
 
+replace github.com/filecoin-project/go-jsonrpc => github.com/nonsense/go-jsonrpc v0.0.0-20221118154859-f3f8e9b1cb11
+
 // replace github.com/filecoin-project/lotus => ../lotus
 
 require (
@@ -88,7 +90,6 @@ require (
 	github.com/multiformats/go-multiaddr v0.7.0
 	github.com/multiformats/go-multibase v0.1.1
 	github.com/multiformats/go-multihash v0.2.1
-	github.com/multiformats/go-varint v0.0.6
 	github.com/open-rpc/meta-schema v0.0.0-20201029221707-1b72ef2ea333
 	github.com/pressly/goose/v3 v3.5.3
 	github.com/prometheus/client_golang v1.13.0
@@ -290,6 +291,7 @@ require (
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multicodec v0.6.0 // indirect
 	github.com/multiformats/go-multistream v0.3.3 // indirect
+	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c // indirect
 	github.com/nkovacs/streamquote v1.0.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect

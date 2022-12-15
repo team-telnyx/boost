@@ -118,10 +118,10 @@ type LotusDealmakingConfig struct {
 	StartEpochSealingBuffer uint64
 
 	// A command used for fine-grained evaluation of storage deals
-	// see https://docs.filecoin.io/mine/lotus/miner-configuration/#using-filters-for-fine-grained-storage-and-retrieval-deal-acceptance for more details
+	// see https://boost.filecoin.io/configuration/deal-filters for more details
 	Filter string
 	// A command used for fine-grained evaluation of retrieval deals
-	// see https://docs.filecoin.io/mine/lotus/miner-configuration/#using-filters-for-fine-grained-storage-and-retrieval-deal-acceptance for more details
+	// see https://boost.filecoin.io/configuration/deal-filters for more details
 	RetrievalFilter string
 
 	RetrievalPricing *lotus_config.RetrievalPricing
@@ -174,12 +174,14 @@ type DealmakingConfig struct {
 	StartEpochSealingBuffer uint64
 	// The amount of time to keep deal proposal logs for before cleaning them up.
 	DealProposalLogDuration Duration
+	// The amount of time to keep retrieval deal logs for before cleaning them up.
+	RetrievalLogDuration Duration
 
 	// A command used for fine-grained evaluation of storage deals
-	// see https://docs.filecoin.io/mine/lotus/miner-configuration/#using-filters-for-fine-grained-storage-and-retrieval-deal-acceptance for more details
+	// see https://boost.filecoin.io/configuration/deal-filters for more details
 	Filter string
 	// A command used for fine-grained evaluation of retrieval deals
-	// see https://docs.filecoin.io/mine/lotus/miner-configuration/#using-filters-for-fine-grained-storage-and-retrieval-deal-acceptance for more details
+	// see https://boost.filecoin.io/configuration/deal-filters for more details
 	RetrievalFilter string
 
 	RetrievalPricing *lotus_config.RetrievalPricing

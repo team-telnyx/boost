@@ -29,7 +29,6 @@ import (
 	"github.com/filecoin-project/lotus/storage/paths"
 	"github.com/filecoin-project/lotus/storage/sealer"
 	"github.com/ipfs/go-cid"
-	"github.com/multiformats/go-multihash"
 	"github.com/urfave/cli/v2"
 )
 
@@ -143,11 +142,20 @@ var runCmd = &cli.Command{
 		// of a real repo, we just need to supply something that satisfies
 		// the LocalStorage interface to the store
 		memRepo := repo.NewMemory(nil)
-		lr, err := memRepo.Lock(repo.StorageMiner)
+
+		// passing FullNode, so that we don't pass StorageMiner or Worker and
+		// skip initializing of sectorstore.json with random local storage ID
+		lr, err := memRepo.Lock(repo.FullNode)
 		if err != nil {
 			return fmt.Errorf("locking mem repo: %w", err)
 		}
 		defer lr.Close()
+
+		if err := lr.SetStorage(func(sc *paths.StorageConfig) {
+			sc.StoragePaths = []paths.LocalPath{}
+		}); err != nil {
+			return fmt.Errorf("set storage config: %w", err)
+		}
 
 		// Create the store interface
 		var urls []string
@@ -226,14 +234,6 @@ type serverApi struct {
 }
 
 var _ HttpServerApi = (*serverApi)(nil)
-
-func (s serverApi) PiecesContainingMultihash(ctx context.Context, mh multihash.Multihash) ([]cid.Cid, error) {
-	return s.bapi.BoostDagstorePiecesContainingMultihash(ctx, mh)
-}
-
-func (s serverApi) GetMaxPieceOffset(pieceCid cid.Cid) (uint64, error) {
-	return s.bapi.PiecesGetMaxOffset(s.ctx, pieceCid)
-}
 
 func (s serverApi) GetPieceInfo(pieceCID cid.Cid) (*piecestore.PieceInfo, error) {
 	return s.bapi.PiecesGetPieceInfo(s.ctx, pieceCID)

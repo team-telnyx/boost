@@ -510,6 +510,55 @@ Must be a control or worker address of the miner.`,
 			Comment: ``,
 		},
 	},
+	"lotus_config.ActorEventConfig": []DocField{
+		{
+			Name: "EnableRealTimeFilterAPI",
+			Type: "bool",
+
+			Comment: `EnableRealTimeFilterAPI enables APIs that can create and query filters for actor events as they are emitted.`,
+		},
+		{
+			Name: "EnableHistoricFilterAPI",
+			Type: "bool",
+
+			Comment: `EnableHistoricFilterAPI enables APIs that can create and query filters for actor events that occurred in the past.
+A queryable index of events will be maintained.`,
+		},
+		{
+			Name: "FilterTTL",
+			Type: "Duration",
+
+			Comment: `FilterTTL specifies the time to live for actor event filters. Filters that haven't been accessed longer than
+this time become eligible for automatic deletion.`,
+		},
+		{
+			Name: "MaxFilters",
+			Type: "int",
+
+			Comment: `MaxFilters specifies the maximum number of filters that may exist at any one time.`,
+		},
+		{
+			Name: "MaxFilterResults",
+			Type: "int",
+
+			Comment: `MaxFilterResults specifies the maximum number of results that can be accumulated by an actor event filter.`,
+		},
+		{
+			Name: "MaxFilterHeightRange",
+			Type: "uint64",
+
+			Comment: `MaxFilterHeightRange specifies the maximum range of heights that can be used in a filter (to avoid querying
+the entire chain)`,
+		},
+		{
+			Name: "ActorEventDatabasePath",
+			Type: "string",
+
+			Comment: `EventHistoryDatabasePath is the full path to a sqlite database that will be used to index actor events to
+support the historic filter APIs. If the database does not exist it will be created. The directory containing
+the database must already exist and be writeable.`,
+		},
+	},
 	"lotus_config.Backup": []DocField{
 		{
 			Name: "DisableMetadataLog",
@@ -852,6 +901,18 @@ see https://lotus.filecoin.io/storage-providers/advanced-configurations/market/#
 
 			Comment: ``,
 		},
+		{
+			Name: "Cluster",
+			Type: "UserRaftConfig",
+
+			Comment: ``,
+		},
+		{
+			Name: "ActorEvent",
+			Type: "ActorEventConfig",
+
+			Comment: ``,
+		},
 	},
 	"lotus_config.IndexProviderConfig": []DocField{
 		{
@@ -1112,6 +1173,24 @@ over the worker address if this flag is set.`,
 'lotus-miner proving compute window-post 0'`,
 		},
 		{
+			Name: "SingleCheckTimeout",
+			Type: "Duration",
+
+			Comment: `WARNING: Setting this value too low risks in sectors being skipped even though they are accessible, just reading the
+test challenge took longer than this timeout
+WARNING: Setting this value too high risks missing PoSt deadline in case IO operations related to this sector are
+blocked (e.g. in case of disconnected NFS mount)`,
+		},
+		{
+			Name: "PartitionCheckTimeout",
+			Type: "Duration",
+
+			Comment: `WARNING: Setting this value too low risks in sectors being skipped even though they are accessible, just reading the
+test challenge took longer than this timeout
+WARNING: Setting this value too high risks missing PoSt deadline in case IO operations related to this partition are
+blocked or slow`,
+		},
+		{
 			Name: "DisableBuiltinWindowPoSt",
 			Type: "bool",
 
@@ -1321,7 +1400,7 @@ If you see stuck Finalize tasks after enabling this setting, check
 		},
 		{
 			Name: "ResourceFiltering",
-			Type: "sealer.ResourceFilteringStrategy",
+			Type: "ResourceFilteringStrategy",
 
 			Comment: `ResourceFiltering instructs the system which resource filtering strategy
 to use when evaluating tasks against this worker. An empty value defaults
@@ -1533,7 +1612,7 @@ submitting proofs to the chain individually`,
 			Type: "string",
 
 			Comment: `ColdStoreType specifies the type of the coldstore.
-It can be "universal" (default) or "discard" for discarding cold blocks.`,
+It can be "messages" (default) to store only messages, "universal" to store all chain state or "discard" for discarding cold blocks.`,
 		},
 		{
 			Name: "HotStoreType",
@@ -1563,30 +1642,6 @@ the compaction boundary; default is 0.`,
 			Comment: `HotStoreFullGCFrequency specifies how often to perform a full (moving) GC on the hotstore.
 A value of 0 disables, while a value 1 will do full GC in every compaction.
 Default is 20 (about once a week).`,
-		},
-		{
-			Name: "EnableColdStoreAutoPrune",
-			Type: "bool",
-
-			Comment: `EnableColdStoreAutoPrune turns on compaction of the cold store i.e. pruning
-where hotstore compaction occurs every finality epochs pruning happens every 3 finalities
-Default is false`,
-		},
-		{
-			Name: "ColdStoreFullGCFrequency",
-			Type: "uint64",
-
-			Comment: `ColdStoreFullGCFrequency specifies how often to performa a full (moving) GC on the coldstore.
-Only applies if auto prune is enabled.  A value of 0 disables while a value of 1 will do
-full GC in every prune.
-Default is 7 (about once every a week)`,
-		},
-		{
-			Name: "ColdStoreRetention",
-			Type: "int64",
-
-			Comment: `ColdStoreRetention specifies the retention policy for data reachable from the chain, in
-finalities beyond the compaction boundary, default is 0, -1 retains everything`,
 		},
 	},
 	"lotus_config.StorageMiner": []DocField{
@@ -1643,6 +1698,68 @@ finalities beyond the compaction boundary, default is 0, -1 retains everything`,
 			Type: "DAGStoreConfig",
 
 			Comment: ``,
+		},
+	},
+	"lotus_config.UserRaftConfig": []DocField{
+		{
+			Name: "ClusterModeEnabled",
+			Type: "bool",
+
+			Comment: `EXPERIMENTAL. config to enabled node cluster with raft consensus`,
+		},
+		{
+			Name: "DataFolder",
+			Type: "string",
+
+			Comment: `A folder to store Raft's data.`,
+		},
+		{
+			Name: "InitPeersetMultiAddr",
+			Type: "[]string",
+
+			Comment: `InitPeersetMultiAddr provides the list of initial cluster peers for new Raft
+peers (with no prior state). It is ignored when Raft was already
+initialized or when starting in staging mode.`,
+		},
+		{
+			Name: "WaitForLeaderTimeout",
+			Type: "Duration",
+
+			Comment: `LeaderTimeout specifies how long to wait for a leader before
+failing an operation.`,
+		},
+		{
+			Name: "NetworkTimeout",
+			Type: "Duration",
+
+			Comment: `NetworkTimeout specifies how long before a Raft network
+operation is timed out`,
+		},
+		{
+			Name: "CommitRetries",
+			Type: "int",
+
+			Comment: `CommitRetries specifies how many times we retry a failed commit until
+we give up.`,
+		},
+		{
+			Name: "CommitRetryDelay",
+			Type: "Duration",
+
+			Comment: `How long to wait between retries`,
+		},
+		{
+			Name: "BackupsRotate",
+			Type: "int",
+
+			Comment: `BackupsRotate specifies the maximum number of Raft's DataFolder
+copies that we keep as backups (renaming) after cleanup.`,
+		},
+		{
+			Name: "Tracing",
+			Type: "bool",
+
+			Comment: `Tracing enables propagation of contexts across binary boundaries.`,
 		},
 	},
 	"lotus_config.Wallet": []DocField{

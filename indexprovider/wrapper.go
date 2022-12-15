@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/filecoin-project/lotus/node/repo"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"go.uber.org/fx"
 
 	dst "github.com/filecoin-project/dagstore"
@@ -139,7 +140,7 @@ func (w *Wrapper) Start(ctx context.Context) {
 		log.Errorw("failed to migrate dagstore indices for Boost deals", "err", err)
 	}
 
-	w.prov.RegisterMultihashLister(func(ctx context.Context, contextID []byte) (provider.MultihashIterator, error) {
+	w.prov.RegisterMultihashLister(func(ctx context.Context, p peer.ID, contextID []byte) (provider.MultihashIterator, error) {
 		provideF := func(pieceCid cid.Cid) (provider.MultihashIterator, error) {
 			ii, err := w.dagStore.GetIterableIndexForPiece(pieceCid)
 			if err != nil {
@@ -194,7 +195,7 @@ func (w *Wrapper) AnnounceBoostDeal(ctx context.Context, pds *types.ProviderDeal
 		protocols = append(protocols, metadata.Bitswap{})
 	}
 
-	fm := metadata.New(protocols...)
+	fm := metadata.Default.New(protocols...)
 
 	// ensure we have a connection with the full node host so that the index provider gossip sub announcements make their
 	// way to the filecoin bootstrapper network
@@ -207,7 +208,7 @@ func (w *Wrapper) AnnounceBoostDeal(ctx context.Context, pds *types.ProviderDeal
 		return cid.Undef, fmt.Errorf("failed to get proposal cid from deal: %w", err)
 	}
 
-	annCid, err := w.prov.NotifyPut(ctx, propCid.Bytes(), fm)
+	annCid, err := w.prov.NotifyPut(ctx, nil, propCid.Bytes(), fm)
 	if err != nil {
 		return cid.Undef, fmt.Errorf("failed to announce deal to index provider: %w", err)
 	}

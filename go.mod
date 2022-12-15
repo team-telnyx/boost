@@ -37,7 +37,7 @@ require (
 	github.com/filecoin-project/go-state-types v0.10.0-alpha-2
 	github.com/filecoin-project/go-statestore v0.2.0
 	github.com/filecoin-project/index-provider v0.9.1
-	github.com/filecoin-project/lotus v1.18.2-0.20221215002611-39a8ac8850ae
+	github.com/filecoin-project/lotus v1.18.2-0.20221215012915-f627afc9dadc
 	github.com/filecoin-project/specs-actors v0.9.15
 	github.com/filecoin-project/specs-storage v0.4.1
 	github.com/filecoin-project/storetheindex v0.4.30-0.20221114113647-683091f8e893

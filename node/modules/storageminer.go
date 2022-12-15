@@ -447,7 +447,7 @@ func NewLegacyStorageProvider(cfg *config.Boost) func(minerAddress lotus_dtypes.
 				protocols = append(protocols, metadata.Bitswap{})
 			}
 
-			return metadata.New(protocols...)
+			return metadata.Default.New(protocols...)
 
 		}))
 		return p, nil

@@ -28,6 +28,7 @@ import (
 	"github.com/filecoin-project/lotus/node/modules"
 	lotus_repo "github.com/filecoin-project/lotus/node/repo"
 	"github.com/filecoin-project/lotus/node/repo/imports"
+	"github.com/google/uuid"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-cidutil/cidenc"
 	"github.com/ipfs/go-datastore"
@@ -345,7 +346,8 @@ func signAndPushToMpool(cctx *cli.Context, ctx context.Context, api api.Gateway,
 	basefee := head.Blocks()[0].ParentBaseFee
 
 	spec := &lapi.MessageSendSpec{
-		MaxFee: abi.NewTokenAmount(1000000000), // 1 nFIL
+		MaxFee:  abi.NewTokenAmount(1000000000), // 1 nFIL
+		MsgUuid: uuid.New(),
 	}
 	msg, err = api.GasEstimateMessageGas(ctx, msg, spec, types.EmptyTSK)
 	if err != nil {
@@ -361,7 +363,7 @@ func signAndPushToMpool(cctx *cli.Context, ctx context.Context, api api.Gateway,
 		msg.GasFeeCap = newGasFeeCap
 	}
 
-	smsg, err := messagesigner.SignMessage(ctx, msg, func(*types.SignedMessage) error { return nil })
+	smsg, err := messagesigner.SignMessage(ctx, msg, spec, func(*types.SignedMessage) error { return nil })
 	if err != nil {
 		return
 	}

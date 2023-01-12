@@ -77,7 +77,7 @@ var statsCmd = &cli.Command{
 
 		fmt.Println("Total SPs with minimum power: ", len(withMinPower))
 
-		var boostNodes, marketsNodes, noProtocolsNodes, indexerNodes int
+		var boostNodes, marketsNodes, noProtocolsNodes, indexerNodes, indexerWithHead int
 
 		boostRawBytePower := big.NewInt(0)
 		boostQualityAdjPower := big.NewInt(0)
@@ -125,9 +125,12 @@ var statsCmd = &cli.Command{
 					fmt.Print(" is running fewer protocols")
 					noProtocolsNodes++
 				}
+
 				if contains(protos, "/legs/head/") {
 					fmt.Print(" (with indexer)")
 					indexerNodes++
+					//					headStr, err := n.Host.NewStream(ctx, addrInfo.ID, "/legs/head/1.0.0")
+					panic(protos)
 				}
 				fmt.Println()
 
@@ -145,7 +148,7 @@ var statsCmd = &cli.Command{
 		fmt.Println("Total Boost quality adj power:", boostQualityAdjPower)
 		fmt.Println("Total Lotus Markets nodes:", marketsNodes)
 		fmt.Println("Total SPs with minimum power: ", len(withMinPower))
-		fmt.Println("Total Indexer nodes:", indexerNodes)
+		fmt.Printf("Total Indexer nodes: %d (%d non-nil)", indexerNodes, indexerWithHead)
 
 		return nil
 	},

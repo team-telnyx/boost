@@ -4,14 +4,22 @@ import (
 	"fmt"
 
 	"github.com/filecoin-project/boost/api"
+	"github.com/filecoin-project/boost/cli/unchained"
+	"github.com/filecoin-project/boost/indexprovider"
 	"github.com/filecoin-project/boost/node"
+	"github.com/filecoin-project/boost/node/modules"
 	"github.com/filecoin-project/boost/node/modules/dtypes"
+	"github.com/filecoin-project/boost/storagemarket/types"
+	"github.com/filecoin-project/go-fil-markets/storagemarket"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	lapi "github.com/filecoin-project/lotus/api"
 	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/filecoin-project/lotus/api/v1api"
 	lcli "github.com/filecoin-project/lotus/cli"
+	lotus_modules "github.com/filecoin-project/lotus/node/modules"
 	lotus_repo "github.com/filecoin-project/lotus/node/repo"
+	"github.com/filecoin-project/lotus/storage/sealer"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -91,13 +99,25 @@ var runCmd = &cli.Command{
 		log.Debug("Instantiating new boost node")
 
 		var boostApi api.Boost
-		stop, err := node.New(ctx,
+		options := []node.Option{
 			node.BoostAPI(&boostApi),
 			node.Override(new(dtypes.ShutdownChan), shutdownChan),
 			node.Base(),
 			node.Repo(r),
 			node.Override(new(v1api.FullNode), fullnodeApi),
-		)
+		}
+		if cctx.Bool(FlagUnchained) {
+			log.Infow("Disabling storage deals when running with a chain")
+			options = append(options, []node.Option{
+				node.Override(node.HandleDealsKey, func() error { return nil }),
+				node.Override(new(sealer.StorageAuth), lotus_modules.StorageAuth),
+				node.Override(new(*indexprovider.Wrapper), indexprovider.NewWrapperNoLegacy()),
+				node.Override(node.HandleBoostDealsKey, modules.HandleOnlyBoostDeals),
+				node.Override(new(types.AskGetter), func() types.AskGetter { return &unchained.EmptyAsk{} }),
+				node.Override(new(storagemarket.StorageProvider), func() storagemarket.StorageProvider { return nil }),
+			}...)
+		}
+		stop, err := node.New(ctx, options...)
 		if err != nil {
 			return fmt.Errorf("creating node: %w", err)
 		}
@@ -125,8 +145,10 @@ var runCmd = &cli.Command{
 
 		log.Debugw("Bootstrapping boost libp2p network with full node", "maadr", remoteAddrs)
 
-		if err := boostApi.NetConnect(ctx, remoteAddrs); err != nil {
-			return fmt.Errorf("connecting to full node (libp2p): %w", err)
+		if remoteAddrs.ID != peer.ID("") {
+			if err := boostApi.NetConnect(ctx, remoteAddrs); err != nil {
+				return fmt.Errorf("connecting to full node (libp2p): %w", err)
+			}
 		}
 
 		// Instantiate the boost service JSON RPC handler.

@@ -81,6 +81,24 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, r repo.LockedRepo, deal
 	}
 }
 
+func NewWrapperNoLegacy() func(lc fx.Lifecycle, r repo.LockedRepo, dealsDB *db.DealsDB,
+	prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) *Wrapper {
+	return func(lc fx.Lifecycle, r repo.LockedRepo, dealsDB *db.DealsDB,
+		prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) *Wrapper {
+		nodeCfg, err := r.Config()
+		if err != nil {
+			return nil
+		}
+		cfg, ok := nodeCfg.(*config.Boost)
+		if !ok {
+			return nil
+		}
+
+		w := NewWrapper(cfg)
+		return w(lc, r, dealsDB, nil, prov, dagStore, meshCreator)
+	}
+}
+
 func (w *Wrapper) Enabled() bool {
 	return w.enabled
 }
@@ -90,12 +108,14 @@ func (w *Wrapper) IndexerAnnounceAllDeals(ctx context.Context) error {
 		return errors.New("cannot announce all deals: index provider is disabled")
 	}
 
-	log.Info("will announce all Markets deals to Indexer")
-	err := w.legacyProv.AnnounceAllDealsToIndexer(ctx)
-	if err != nil {
-		log.Warnw("some errors while announcing legacy deals to index provider", "err", err)
+	if w.legacyProv != nil {
+		log.Info("will announce all Markets deals to Indexer")
+		err := w.legacyProv.AnnounceAllDealsToIndexer(ctx)
+		if err != nil {
+			log.Warnw("some errors while announcing legacy deals to index provider", "err", err)
+		}
+		log.Infof("finished announcing markets deals to indexer")
 	}
-	log.Infof("finished announcing markets deals to indexer")
 
 	log.Info("will announce all Boost deals to Indexer")
 	deals, err := w.dealsDB.ListActive(ctx)
@@ -168,9 +188,12 @@ func (w *Wrapper) Start(ctx context.Context) {
 		}
 
 		// check in legacy markets
-		md, legacyErr := w.legacyProv.GetLocalDeal(proposalCid)
-		if legacyErr == nil {
-			return provideF(md.Proposal.PieceCID)
+		var legacyErr error
+		if w.legacyProv != nil {
+			md, legacyErr := w.legacyProv.GetLocalDeal(proposalCid)
+			if legacyErr == nil {
+				return provideF(md.Proposal.PieceCID)
+			}
 		}
 
 		return nil, fmt.Errorf("failed to look up deal in Boost, err=%s and Legacy Markets, err=%s", boostErr, legacyErr)

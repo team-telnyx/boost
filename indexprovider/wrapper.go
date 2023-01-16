@@ -126,21 +126,21 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, h host.Host, r repo.Loc
 	}
 }
 
-func NewWrapperNoLegacy() func(lc fx.Lifecycle, r repo.LockedRepo, dealsDB *db.DealsDB,
-	prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) *Wrapper {
-	return func(lc fx.Lifecycle, r repo.LockedRepo, dealsDB *db.DealsDB,
-		prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) *Wrapper {
+func NewWrapperNoLegacy() func(lc fx.Lifecycle, h host.Host, r repo.LockedRepo, dealsDB *db.DealsDB,
+	prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) (*Wrapper, error) {
+	return func(lc fx.Lifecycle, h host.Host, r repo.LockedRepo, dealsDB *db.DealsDB,
+		prov provider.Interface, dagStore *dagstore.Wrapper, meshCreator idxprov.MeshCreator) (*Wrapper, error) {
 		nodeCfg, err := r.Config()
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		cfg, ok := nodeCfg.(*config.Boost)
 		if !ok {
-			return nil
+			return nil, err
 		}
 
 		w := NewWrapper(cfg)
-		return w(lc, r, dealsDB, nil, prov, dagStore, meshCreator)
+		return w(lc, h, r, dealsDB, nil, prov, dagStore, meshCreator)
 	}
 }
 
@@ -276,7 +276,7 @@ func (w *Wrapper) Start(ctx context.Context) {
 		if w.legacyProv != nil {
 			md, legacyErr := w.legacyProv.GetLocalDeal(proposalCid)
 			if legacyErr == nil {
-				return provideF(md.Proposal.PieceCID)
+				return provideF(*md.Ref.PieceCid)
 			}
 		}
 

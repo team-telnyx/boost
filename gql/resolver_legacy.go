@@ -28,6 +28,10 @@ func (r *resolver) LegacyDeal(ctx context.Context, args struct{ ID graphql.ID })
 		return nil, fmt.Errorf("parsing deal signed proposal cid %s: %w", args.ID, err)
 	}
 
+	if r.legacyProv == nil {
+		return nil, nil
+	}
+
 	dl, err := r.legacyProv.GetLocalDeal(signedPropCid)
 	if err != nil {
 		return nil, fmt.Errorf("getting deal with signed proposal cid %s: %w", args.ID, err)
@@ -116,6 +120,9 @@ func (r *resolver) LegacyDeals(ctx context.Context, args dealsArgs) (*legacyDeal
 }
 
 func (r *resolver) LegacyDealsCount() (int32, error) {
+	if r.legacyProv == nil {
+		return 0, nil
+	}
 	dealCount, err := r.legacyProv.LocalDealCount()
 	if err != nil {
 		return 0, fmt.Errorf("getting deal count: %w", err)

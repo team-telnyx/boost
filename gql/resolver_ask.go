@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/boost/gql/types"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/filecoin-project/go-state-types/abi"
+	stbig "github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/lotus/build"
 	"github.com/graph-gophers/graphql-go"
 )
@@ -25,6 +26,17 @@ func (r *resolver) StorageAsk(ctx context.Context) (*storageAskResolver, error) 
 	head, err := r.fullNode.ChainHead(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting chain head: %w", err)
+	}
+
+	if r.legacyProv == nil {
+		return &storageAskResolver{
+			Price:         types.BigInt{Int: stbig.NewInt(0)},
+			VerifiedPrice: types.BigInt{Int: stbig.NewInt(0)},
+			MinPieceSize:  types.Uint64(0),
+			MaxPieceSize:  types.Uint64(0),
+			ExpiryEpoch:   types.Uint64(0),
+			ExpiryTime:    graphql.Time{Time: time.Unix(0, 0)},
+		}, nil
 	}
 
 	signedAsk := r.legacyProv.GetAsk()
@@ -50,6 +62,9 @@ type storageAskUpdate struct {
 }
 
 func (r *resolver) StorageAskUpdate(args struct{ Update storageAskUpdate }) (bool, error) {
+	if r.legacyProv == nil {
+		return false, fmt.Errorf("cannot update storage ask without storage provider")
+	}
 	signedAsk := r.legacyProv.GetAsk()
 	ask := signedAsk.Ask
 

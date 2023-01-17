@@ -113,7 +113,7 @@ var runCmd = &cli.Command{
 		storageApiInfo := cctx.String("api-storage")
 		sauth, err := storageAuthWithURL(storageApiInfo)
 		if err != nil {
-			return fmt.Errorf("parsing storage API endpoint: %w", err)
+			log.Warnf("No storage authentication provide. storage requests will be unauthenticated: %w", err)
 		}
 		storageService, storageCloser, err := getMinerApi(ctx, storageApiInfo)
 		if err != nil {

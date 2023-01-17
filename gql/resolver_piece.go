@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	
+
 	gqltypes "github.com/filecoin-project/boost/gql/types"
 	"github.com/filecoin-project/boost/storagemarket/types/dealcheckpoints"
 	"github.com/filecoin-project/dagstore"
@@ -97,13 +97,15 @@ func (r *resolver) PiecesWithRootPayloadCid(ctx context.Context, args struct{ Pa
 
 	// Get legacy markets deals by payload cid
 	// TODO: add method to markets to filter deals by payload CID
-	allLegacyDeals, err := r.legacyProv.ListLocalDeals()
-	if err != nil {
-		return nil, err
-	}
-	for _, dl := range allLegacyDeals {
-		if dl.Ref.Root == payloadCid {
-			pieceCidSet[dl.ClientDealProposal.Proposal.PieceCID.String()] = struct{}{}
+	if r.legacyProv != nil {
+		allLegacyDeals, err := r.legacyProv.ListLocalDeals()
+		if err != nil {
+			return nil, err
+		}
+		for _, dl := range allLegacyDeals {
+			if dl.Ref.Root == payloadCid {
+				pieceCidSet[dl.ClientDealProposal.Proposal.PieceCID.String()] = struct{}{}
+			}
 		}
 	}
 
@@ -134,14 +136,16 @@ func (r *resolver) PieceStatus(ctx context.Context, args struct{ PieceCid string
 
 	// Get legacy markets deals by piece Cid
 	// TODO: add method to markets to filter deals by piece CID
-	allLegacyDeals, err := r.legacyProv.ListLocalDeals()
-	if err != nil {
-		return nil, err
-	}
 	var legacyDeals []storagemarket.MinerDeal
-	for _, dl := range allLegacyDeals {
-		if dl.Ref.PieceCid != nil && *dl.Ref.PieceCid == pieceCid {
-			legacyDeals = append(legacyDeals, dl)
+	if r.legacyProv != nil {
+		allLegacyDeals, err := r.legacyProv.ListLocalDeals()
+		if err != nil {
+			return nil, err
+		}
+		for _, dl := range allLegacyDeals {
+			if dl.Ref.PieceCid != nil && *dl.Ref.PieceCid == pieceCid {
+				legacyDeals = append(legacyDeals, dl)
+			}
 		}
 	}
 

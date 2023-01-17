@@ -55,6 +55,9 @@ func (r *resolver) withTransferState(ctx context.Context, dl storagemarket.Miner
 
 // query: legacyDeals(query, cursor, offset, limit) DealList
 func (r *resolver) LegacyDeals(ctx context.Context, args dealsArgs) (*legacyDealListResolver, error) {
+	if r.legacyProv == nil {
+		return nil, nil
+	}
 	offset := 0
 	if args.Offset.Set && args.Offset.Value != nil && *args.Offset.Value > 0 {
 		offset = int(*args.Offset.Value)

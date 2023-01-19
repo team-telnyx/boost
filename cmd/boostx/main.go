@@ -32,6 +32,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			commpCmd,
+			dealCmd,
 			generatecarCmd,
 			marketAddCmd,
 			marketWithdrawCmd,

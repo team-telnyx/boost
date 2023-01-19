@@ -144,21 +144,23 @@ func (p *Provider) validateDealProposal(deal types.ProviderDealState) *validatio
 		}
 	}
 
-	bal, err := p.fullnodeApi.StateMarketBalance(p.ctx, proposal.Client, tsk)
-	if err != nil {
-		return &validationError{
-			reason: "server error: getting market balance",
-			error:  fmt.Errorf("node error getting client market balance failed: %w", err),
+	if proposal.ClientBalanceRequirement().GreaterThan(big.NewInt(0)) {
+		bal, err := p.fullnodeApi.StateMarketBalance(p.ctx, proposal.Client, tsk)
+		if err != nil {
+			return &validationError{
+				reason: "server error: getting market balance",
+				error:  fmt.Errorf("node error getting client market balance failed: %w", err),
+			}
 		}
-	}
 
-	clientMarketBalance := utils.ToSharedBalance(bal)
+		clientMarketBalance := utils.ToSharedBalance(bal)
 
-	// This doesn't guarantee that the client won't withdraw / lock those funds
-	// but it's a decent first filter
-	if clientMarketBalance.Available.LessThan(proposal.ClientBalanceRequirement()) {
-		err := fmt.Errorf("client available funds in escrow %d not enough to meet storage cost for deal %d", clientMarketBalance.Available, proposal.ClientBalanceRequirement())
-		return &validationError{error: err}
+		// This doesn't guarantee that the client won't withdraw / lock those funds
+		// but it's a decent first filter
+		if clientMarketBalance.Available.LessThan(proposal.ClientBalanceRequirement()) {
+			err := fmt.Errorf("client available funds in escrow %d not enough to meet storage cost for deal %d", clientMarketBalance.Available, proposal.ClientBalanceRequirement())
+			return &validationError{error: err}
+		}
 	}
 
 	// Verified deal checks

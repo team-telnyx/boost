@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 
 	"github.com/filecoin-project/go-address"
 	cborutil "github.com/filecoin-project/go-cbor-util"
@@ -19,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car/v2"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
@@ -95,13 +97,11 @@ var dealCmd = &cli.Command{
 			return fmt.Errorf("cannot make a deal with markets endpoint")
 		}
 
-		dealUuid := uuid.New()
 		carFile := cctx.Args().First()
 		cfStat, err := os.Stat(carFile)
 		if err != nil {
 			return err
 		}
-		pieceProposal := NextPowOf2(int(cfStat.Size()))
 		carReader, err := car.OpenReader(carFile)
 		if err != nil {
 			return err
@@ -128,59 +128,81 @@ var dealCmd = &cli.Command{
 			return fmt.Errorf("computing commP failed: %w", err)
 		}
 
-		transfer := types.Transfer{
-			Size: uint64(cfStat.Size()),
-			Type: "manual",
-		}
-
-		minerAddr, _ := address.NewFromString("f1lffqta4fohaaznyk264fir5mfce4wccttskuwvy")
-
-		localKey, _ := key.GenerateKey(ctypes.KTSecp256k1)
-
-		dealProposal, err := dealProposal(ctx,
-			localKey,
-			localKey.Address,
-			roots[0],
-			abi.PaddedPieceSize(pieceProposal),
-			commP.PieceCID,
-			minerAddr,
-			startEpoch,
-			518400, // duration
-			false,
-			abi.NewTokenAmount(0), //providerCollateral
-			abi.NewTokenAmount(0), //storagePrice
-		)
+		randomMinerKey, _ := key.GenerateKey(ctypes.KTSecp256k1)
+		err = TryProposalWith(cctx, n.Host, ai.ID, roots[0], commP.PieceCID, startEpoch, cfStat.Size(), randomMinerKey.Address)
 		if err != nil {
-			return fmt.Errorf("failed to create a deal proposal: %w", err)
+			rexp := regexp.MustCompile(`.*incorrect provider for deal.*provider\.Address: ([\w]+)`)
+			if m := rexp.FindStringSubmatch(err.Error()); len(m) > 1 {
+				realMiner, _ := address.NewFromString(m[1])
+				err = TryProposalWith(cctx, n.Host, ai.ID, roots[0], commP.PieceCID, startEpoch, cfStat.Size(), realMiner)
+			}
 		}
-
-		dealParams := types.DealParams{
-			DealUUID:           dealUuid,
-			ClientDealProposal: *dealProposal,
-			DealDataRoot:       roots[0],
-			IsOffline:          true,
-			Transfer:           transfer,
-			RemoveUnsealedCopy: cctx.Bool("remove-unsealed-copy"),
-			SkipIPNIAnnounce:   cctx.Bool("skip-ipni-announce"),
-		}
-
-		s, err := n.Host.NewStream(ctx, ai.ID, DealProtocolv120)
-		if err != nil {
-			return fmt.Errorf("failed to open stream: %w", err)
-		}
-		defer s.Close()
-
-		var resp types.DealResponse
-		if err := doRpc(ctx, s, &dealParams, &resp); err != nil {
-			return fmt.Errorf("send proposal rpc: %w", err)
-		}
-
-		if !resp.Accepted {
-			return fmt.Errorf("deal proposal rejected: %s", resp.Message)
-		}
-
-		return nil
+		return err
 	},
+}
+
+func TryProposalWith(cctx *cli.Context,
+	h host.Host,
+	peer peer.ID,
+	root cid.Cid,
+	commP cid.Cid,
+	startEpoch abi.ChainEpoch,
+	size int64,
+	providerAddr address.Address) error {
+	ctx := cctx.Context
+	localKey, _ := key.GenerateKey(ctypes.KTSecp256k1)
+	dealUuid := uuid.New()
+
+	transfer := types.Transfer{
+		Size: uint64(size),
+		Type: "manual",
+	}
+
+	paddedSize := abi.PaddedPieceSize(NextPowOf2(int(size)))
+
+	dealProposal, err := dealProposal(ctx,
+		localKey,
+		localKey.Address,
+		root,
+		paddedSize,
+		commP,
+		providerAddr,
+		startEpoch,
+		518400, // duration
+		false,
+		abi.NewTokenAmount(0), //providerCollateral
+		abi.NewTokenAmount(0), //storagePrice
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create a deal proposal: %w", err)
+	}
+
+	dealParams := types.DealParams{
+		DealUUID:           dealUuid,
+		ClientDealProposal: *dealProposal,
+		DealDataRoot:       root,
+		IsOffline:          true,
+		Transfer:           transfer,
+		RemoveUnsealedCopy: cctx.Bool("remove-unsealed-copy"),
+		SkipIPNIAnnounce:   cctx.Bool("skip-ipni-announce"),
+	}
+
+	s, err := h.NewStream(ctx, peer, DealProtocolv120)
+	if err != nil {
+		return fmt.Errorf("failed to open stream: %w", err)
+	}
+	defer s.Close()
+
+	var resp types.DealResponse
+	if err := doRpc(ctx, s, &dealParams, &resp); err != nil {
+		return fmt.Errorf("send proposal rpc: %w", err)
+	}
+
+	if !resp.Accepted {
+		return fmt.Errorf("deal proposal rejected: %s", resp.Message)
+	}
+
+	return nil
 }
 
 func dealProposal(

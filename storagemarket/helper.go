@@ -26,7 +26,12 @@ type ChainDealManager struct {
 	cfg         ChainDealManagerCfg
 }
 
-func NewChainDealManager(a v1api.FullNode, cfg ChainDealManagerCfg) *ChainDealManager {
+type DealManagerIface interface {
+	WaitForPublishDeals(ctx context.Context, publishCid cid.Cid, proposal market8.DealProposal) (*storagemarket.PublishDealsWaitResult, error)
+	GetCurrentDealInfo(ctx context.Context, tok ctypes.TipSetKey, proposal *market.DealProposal, publishCid cid.Cid) (CurrentDealInfo, error)
+}
+
+func NewChainDealManager(a v1api.FullNode, cfg ChainDealManagerCfg) DealManagerIface {
 	return &ChainDealManager{fullnodeApi: a, cfg: cfg}
 }
 

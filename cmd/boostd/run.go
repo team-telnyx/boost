@@ -9,6 +9,7 @@ import (
 	"github.com/filecoin-project/boost/node"
 	"github.com/filecoin-project/boost/node/modules"
 	"github.com/filecoin-project/boost/node/modules/dtypes"
+	boostmarket "github.com/filecoin-project/boost/storagemarket"
 	"github.com/filecoin-project/boost/storagemarket/types"
 	"github.com/filecoin-project/go-fil-markets/storagemarket"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -17,7 +18,9 @@ import (
 	"github.com/filecoin-project/lotus/api/v0api"
 	"github.com/filecoin-project/lotus/api/v1api"
 	lcli "github.com/filecoin-project/lotus/cli"
+	lotus_storageadapter "github.com/filecoin-project/lotus/markets/storageadapter"
 	lotus_modules "github.com/filecoin-project/lotus/node/modules"
+	lotus_dtypes "github.com/filecoin-project/lotus/node/modules/dtypes"
 	lotus_repo "github.com/filecoin-project/lotus/node/repo"
 	"github.com/filecoin-project/lotus/storage/sealer"
 
@@ -107,7 +110,8 @@ var runCmd = &cli.Command{
 			node.Override(new(v1api.FullNode), fullnodeApi),
 		}
 		if cctx.Bool(FlagUnchained) {
-			log.Infow("Disabling storage deals when running with a chain")
+			log.Infow("Not supporting paid deals when running without a chain")
+
 			options = append(options, []node.Option{
 				node.Override(node.HandleDealsKey, func() error { return nil }),
 				node.Override(new(sealer.StorageAuth), lotus_modules.StorageAuth),
@@ -115,6 +119,9 @@ var runCmd = &cli.Command{
 				node.Override(node.HandleBoostDealsKey, modules.HandleOnlyBoostDeals),
 				node.Override(new(types.AskGetter), func() types.AskGetter { return &unchained.EmptyAsk{} }),
 				node.Override(new(storagemarket.StorageProvider), func() storagemarket.StorageProvider { return nil }),
+				node.Override(new(*lotus_storageadapter.DealPublisher), unchained.DealPublishAccepter(cctx)),
+				node.Override(new(boostmarket.DealManagerIface), unchained.ChainDealManager),
+				node.Override(new(lotus_dtypes.MinerAddress), unchained.MinerAddress),
 			}...)
 		}
 		stop, err := node.New(ctx, options...)

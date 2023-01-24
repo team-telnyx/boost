@@ -311,7 +311,7 @@ func (f *TestFramework) Start() error {
 
 		// Reduce publish storage deals message confidence to 1 epoch so we
 		// don't wait so long for publish confirmation
-		node.Override(new(*storagemarket.ChainDealManager), func(a v1api.FullNode) *storagemarket.ChainDealManager {
+		node.Override(new(storagemarket.DealManagerIface), func(a v1api.FullNode) storagemarket.DealManagerIface {
 			cdmCfg := storagemarket.ChainDealManagerCfg{PublishDealsConfidence: 1}
 			return storagemarket.NewChainDealManager(a, cdmCfg)
 		}),

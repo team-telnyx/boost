@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/filecoin-project/boostd-data/couchbase"
+	"go.uber.org/zap"
+	"math"
 	_ "net/http/pprof"
 	"time"
 
@@ -17,6 +20,7 @@ var pieceDirCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		pdIndexGenerate,
 		pdIndexMarkErroredCmd,
+		pdMigrateCmd,
 	},
 }
 
@@ -96,5 +100,55 @@ var pdIndexMarkErroredCmd = &cli.Command{
 		fmt.Printf("Marked %s as errored with \"%s\"\n", piececid, errMsg)
 
 		return nil
+	},
+}
+
+var pdMigrateCmd = &cli.Command{
+	Name:  "migrate-couchbase",
+	Usage: "Migrate couchbase local index directory to new format",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:     "connect-string",
+			Usage:    "couchbase connect string eg 'couchbase://127.0.0.1'",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "username",
+			Required: true,
+		},
+		&cli.StringFlag{
+			Name:     "password",
+			Required: true,
+		},
+		&cli.IntFlag{
+			Name:  "row-count",
+			Value: math.MaxInt,
+		},
+	},
+	Action: func(cctx *cli.Context) error {
+		ctx := lcli.ReqContext(cctx)
+
+		store := couchbase.NewStore(couchbase.DBSettings{
+			ConnectString: cctx.String("connect-string"),
+			Auth: couchbase.DBSettingsAuth{
+				Username: cctx.String("username"),
+				Password: cctx.String("password"),
+			},
+		})
+
+		err := store.Start(ctx)
+		if err != nil {
+			return err
+		}
+
+		logCfg := zap.NewDevelopmentConfig()
+		logCfg.DisableStacktrace = true
+		zl, err := logCfg.Build()
+		if err != nil {
+			return err
+		}
+		defer zl.Sync() //nolint:errcheck
+
+		return store.Migrate(ctx, zl.Sugar(), cctx.Int("row-count"))
 	},
 }

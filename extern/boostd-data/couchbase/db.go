@@ -511,10 +511,20 @@ func (db *DB) GetOffsetSize(ctx context.Context, pieceCid cid.Cid, hash multihas
 // AllRecords gets all the mulithash -> offset/size mappings in a given piece.
 // Note that recordCount is needed in order to determine the shard structure.
 func (db *DB) AllRecords(ctx context.Context, pieceCid cid.Cid, recordCount int) ([]model.Record, error) {
-	return db.allRecordsWithKeyFn(ctx, pieceCid, recordCount, toCouchKey, decodeMultihashAsPath)
+	unmarshallOffsetSize := func(val string) (model.OffsetSize, error) {
+		var ofsz model.OffsetSize
+		err := ofsz.UnmarshallBase64(val)
+		return ofsz, err
+	}
+	return db.allRecordsWithKeyFn(ctx, pieceCid, recordCount, toCouchKey, decodeMultihashAsPath, unmarshallOffsetSize)
 }
 
-func (db *DB) allRecordsWithKeyFn(ctx context.Context, pieceCid cid.Cid, recordCount int, toCouchKeyFn func(string) string, decodeMultihashAsPathFn func(mhenc string) (multihash.Multihash, error)) ([]model.Record, error) {
+func (db *DB) allRecordsWithKeyFn(
+	ctx context.Context, pieceCid cid.Cid, recordCount int,
+	toCouchKeyFn func(string) string,
+	decodeMultihashAsPathFn func(mhenc string) (multihash.Multihash, error),
+	unmarshallOffsetSize func(string) (model.OffsetSize, error),
+) ([]model.Record, error) {
 	ctx, span := tracing.Tracer.Start(ctx, "db.all_records")
 	defer span.End()
 
@@ -567,8 +577,7 @@ func (db *DB) allRecordsWithKeyFn(ctx context.Context, pieceCid cid.Cid, recordC
 					return fmt.Errorf("unexpected type for piece cid %s offset/size value: %T", pieceCid, offsetSizeIfce)
 				}
 
-				var ofsz model.OffsetSize
-				err = ofsz.UnmarshallBase64(val)
+				ofsz, err := unmarshallOffsetSize(val)
 				if err != nil {
 					return fmt.Errorf("parsing piece %s offset / size value '%s': %w", pieceCid, val, err)
 				}

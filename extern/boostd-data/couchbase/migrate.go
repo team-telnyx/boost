@@ -2,7 +2,10 @@ package couchbase
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"github.com/filecoin-project/boostd-data/model"
 	"github.com/ipfs/go-cid"
 	"github.com/multiformats/go-multihash"
 	"go.uber.org/zap"
@@ -83,7 +86,7 @@ func (s *Store) migratePieceCidToMetadata(ctx context.Context, logger *zap.Sugar
 func (s *Store) migrate(ctx context.Context, pieceCid cid.Cid, r pcidRow) error {
 	recs, err := s.db.allRecordsWithKeyFn(ctx, pieceCid, r.PieceMeta.BlockCount, func(k string) string {
 		return toCouchKey("u:" + k)
-	}, multihash.FromHexString)
+	}, multihash.FromHexString, oldUnmarshallOffsetSize)
 	if err != nil {
 		return fmt.Errorf("getting recs: %w", err)
 	}
@@ -94,4 +97,19 @@ func (s *Store) migrate(ctx context.Context, pieceCid cid.Cid, r pcidRow) error 
 	}
 
 	return nil
+}
+
+func oldUnmarshallOffsetSize(val string) (model.OffsetSize, error) {
+	buf, err := base64.StdEncoding.DecodeString(val)
+	if err != nil {
+		return model.OffsetSize{}, fmt.Errorf("decoding offset/size from base64 string: %w", err)
+	}
+
+	offset, n := binary.Uvarint(buf)
+	size, _ := binary.Uvarint(buf[n:])
+
+	return model.OffsetSize{
+		Offset: offset,
+		Size:   size,
+	}, nil
 }

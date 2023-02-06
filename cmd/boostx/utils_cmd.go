@@ -37,6 +37,8 @@ import (
 	"github.com/ipfs/go-datastore/namespace"
 	ds_sync "github.com/ipfs/go-datastore/sync"
 	"github.com/ipld/go-car"
+	carv2 "github.com/ipld/go-car/v2"
+	"github.com/ipld/go-car/v2/blockstore"
 	selectorparse "github.com/ipld/go-ipld-prime/traversal/selector/parse"
 	"github.com/multiformats/go-multibase"
 	"github.com/urfave/cli/v2"
@@ -280,7 +282,12 @@ var generateRandCar = &cli.Command{
 			return err
 		}
 
-		root, cn, err := testutil.CreateDenseCARv2With(outPath, rf, cs, ml)
+		// carv1
+		caropts := []carv2.Option{
+			blockstore.WriteAsCarV1(true),
+		}
+
+		root, cn, err := testutil.CreateDenseCARWith(outPath, rf, cs, ml, caropts)
 		if err != nil {
 			return err
 		}

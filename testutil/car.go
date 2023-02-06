@@ -20,6 +20,7 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipfs/go-unixfs/importer/balanced"
 	ihelper "github.com/ipfs/go-unixfs/importer/helpers"
+	"github.com/ipld/go-car/v2"
 	"github.com/ipld/go-car/v2/blockstore"
 	"github.com/multiformats/go-multihash"
 )
@@ -64,12 +65,16 @@ func CreateRandomFile(dir string, rseed, size int) (string, error) {
 func CreateDenseCARv2(dir, src string) (cid.Cid, string, error) {
 	cs := int64(unixfsChunkSize)
 	maxlinks := unixfsLinksPerLevel
-	return CreateDenseCARv2With(dir, src, cs, maxlinks)
+	// Use carv2
+	caropts := []car.Option{
+		blockstore.UseWholeCIDs(true),
+	}
+	return CreateDenseCARWith(dir, src, cs, maxlinks, caropts)
 }
 
 // CreateDenseCARv2 generates a "dense" UnixFS CARv2 from the supplied ordinary file.
 // A dense UnixFS CARv2 is one storing leaf data. Contrast to CreateRefCARv2.
-func CreateDenseCARv2With(dir, src string, chunksize int64, maxlinks int) (cid.Cid, string, error) {
+func CreateDenseCARWith(dir, src string, chunksize int64, maxlinks int, caropts []car.Option) (cid.Cid, string, error) {
 	bs := bstore.NewBlockstore(dssync.MutexWrap(ds.NewMapDatastore()))
 	dagSvc := merkledag.NewDAGService(blockservice.New(bs, offline.Exchange(bs)))
 
@@ -89,7 +94,7 @@ func CreateDenseCARv2With(dir, src string, chunksize int64, maxlinks int) (cid.C
 		return cid.Undef, "", err
 	}
 
-	rw, err := blockstore.OpenReadWrite(out.Name(), []cid.Cid{root}, blockstore.UseWholeCIDs(true))
+	rw, err := blockstore.OpenReadWrite(out.Name(), []cid.Cid{root}, caropts...)
 	if err != nil {
 		return cid.Undef, "", err
 	}

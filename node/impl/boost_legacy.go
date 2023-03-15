@@ -24,9 +24,17 @@ func (sm *BoostAPI) MarketListDataTransfers(ctx context.Context) ([]lapi.DataTra
 		return nil, err
 	}
 
-	apiChannels := make([]lapi.DataTransferChannel, 0, len(inProgressChannels))
+	unpaidRetrievals := sm.GraphsyncUnpaidRetrieval.List()
+
+	// Get legacy, paid retrievals
+	apiChannels := make([]lapi.DataTransferChannel, 0, len(inProgressChannels)+len(unpaidRetrievals))
 	for _, channelState := range inProgressChannels {
 		apiChannels = append(apiChannels, lapi.NewDataTransferChannel(sm.Host.ID(), channelState))
+	}
+
+	// Include unpaid retrievals
+	for _, ur := range unpaidRetrievals {
+		apiChannels = append(apiChannels, lapi.NewDataTransferChannel(sm.Host.ID(), ur.ChannelState()))
 	}
 
 	return apiChannels, nil
@@ -42,6 +50,14 @@ func (sm *BoostAPI) MarketRestartDataTransfer(ctx context.Context, transferID da
 
 func (sm *BoostAPI) MarketCancelDataTransfer(ctx context.Context, transferID datatransfer.TransferID, otherPeer peer.ID, isInitiator bool) error {
 	selfPeer := sm.Host.ID()
+
+	// Attempt to cancel unpaid first, if that succeeds, we're done
+	err := sm.GraphsyncUnpaidRetrieval.CancelTransfer(ctx, transferID, &otherPeer)
+	if err == nil {
+		return nil
+	}
+
+	// Legacy, paid retrievals
 	if isInitiator {
 		return sm.DataTransfer.CloseDataTransferChannel(ctx, datatransfer.ChannelID{Initiator: selfPeer, Responder: otherPeer, ID: transferID})
 	}
@@ -68,8 +84,10 @@ func (sm *BoostAPI) MarketDataTransferUpdates(ctx context.Context) (<-chan lapi.
 }
 
 func (sm *BoostAPI) MarketListRetrievalDeals(ctx context.Context) ([]retrievalmarket.ProviderDealState, error) {
-	var out []retrievalmarket.ProviderDealState
 	deals := sm.RetrievalProvider.ListDeals()
+	unpaidRetrievals := sm.GraphsyncUnpaidRetrieval.List()
+
+	out := make([]retrievalmarket.ProviderDealState, 0, len(deals)+len(unpaidRetrievals))
 
 	for _, deal := range deals {
 		if deal.ChannelID != nil {
@@ -78,6 +96,10 @@ func (sm *BoostAPI) MarketListRetrievalDeals(ctx context.Context) ([]retrievalma
 			}
 		}
 		out = append(out, deal)
+	}
+
+	for _, ur := range unpaidRetrievals {
+		out = append(out, ur.ProviderDealState())
 	}
 
 	return out, nil

@@ -25,6 +25,51 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 )
 
+type storageMarketNetwork struct {
+	smnet.StorageMarketNetwork
+}
+
+func (n *storageMarketNetwork) SetDelegate(receiver smnet.StorageReceiver) error {
+	n.StorageMarketNetwork.SetDelegate(&storageReceiver{StorageReceiver: receiver})
+	return nil
+}
+
+type storageReceiver struct {
+	smnet.StorageReceiver
+}
+
+func (r *storageReceiver) HandleDealStream(stream smnet.StorageDealStream) {
+	stream = &cachingStorageDealStream{StorageDealStream: stream}
+	prop, err := stream.ReadDealProposal()
+	if err != nil || prop.Piece == nil || prop.Piece.TransferType != storagemarket.TTManual {
+		r.StorageReceiver.HandleDealStream(stream)
+	}
+
+}
+
+func (r *storageReceiver) HandleDealStatusStream(stream smnet.DealStatusStream) {
+
+}
+
+type cachingStorageDealStream struct {
+	smnet.StorageDealStream
+	called bool
+	prop   *smnet.Proposal
+	err    error
+}
+
+func (s *cachingStorageDealStream) ReadDealProposal() (smnet.Proposal, error) {
+	if s.called {
+		return *s.prop, s.err
+	}
+
+	prop, err := s.StorageDealStream.ReadDealProposal()
+	s.called = true
+	s.prop = &prop
+	s.err = err
+	return prop, err
+}
+
 func StorageProvider(minerAddress lotus_dtypes.MinerAddress,
 	storedAsk *storedask.StoredAsk,
 	h host.Host, ds lotus_dtypes.MetadataDS,
@@ -38,6 +83,7 @@ func StorageProvider(minerAddress lotus_dtypes.MinerAddress,
 	meshCreator idxprov.MeshCreator,
 ) (storagemarket.StorageProvider, error) {
 	net := smnet.NewFromLibp2pHost(h)
+	net = &storageMarketNetwork{StorageMarketNetwork: net}
 
 	dir := filepath.Join(r.Path(), lotus_modules.StagingAreaDirName)
 

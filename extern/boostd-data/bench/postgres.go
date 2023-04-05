@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/filecoin-project/boostd-data/model"
 	"github.com/filecoin-project/boostd-data/shared/cliutil"
@@ -96,6 +98,9 @@ var postgresCmd = &cli.Command{
 	}),
 	Action: func(cctx *cli.Context) error {
 		ctx := cliutil.ReqContext(cctx)
+
+		rand.Seed(time.Now().UnixNano())
+
 		db, err := NewPostgresDB(cctx.String("connect-string"))
 		if err != nil {
 			return err
@@ -173,7 +178,7 @@ func (db *Postgres) Init(ctx context.Context) error {
 }
 
 func (db *Postgres) connect(ctx context.Context) error {
-	benchConnStr, err := getConnStringWithDb(db.connectString, "bench")
+	benchConnStr, err := getConnStringWithDb(db.connectString, "postgres")
 	if err != nil {
 		return err
 	}

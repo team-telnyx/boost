@@ -114,7 +114,7 @@ func NewPostgresDB(connectString string, insertWithTmpTable bool) (*Postgres, er
 		return nil, fmt.Errorf("connecting to default database: %w", err)
 	}
 
-	db.SetMaxOpenConns(100)
+	db.SetMaxOpenConns(33000)
 
 	return &Postgres{
 		db:                 db,

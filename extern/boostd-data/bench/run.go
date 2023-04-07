@@ -183,10 +183,13 @@ func addPieces(ctx context.Context, db BenchDB, parallelism int, pieceCount int,
 
 					// Add the records to the db
 					addRecsStart := time.Now()
-					pcid := testutil.GenerateCid()
+					pcid, err := generateRandomCid(baseCid)
+					if err != nil {
+						return err
+					}
 
 					start := time.Now()
-					err := db.AddIndexRecords(ctx, pcid, recs)
+					err = db.AddIndexRecords(ctx, pcid, recs)
 					if err != nil {
 						return err
 					}

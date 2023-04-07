@@ -291,7 +291,7 @@ func (db *Postgres) GetOffsetSize(ctx context.Context, pieceCid cid.Cid, hash mu
 func (db *Postgres) GetIterableIndex(ctx context.Context, pieceCid cid.Cid) (index.IterableIndex, error) {
 	start := time.Now()
 
-	qry := `SELECT PayloadMultihash, BlockOffset FROM PieceBlockOffsetSize WHERE PieceCid = $1`
+	qry := `SELECT PayloadMultihash, BlockOffset FROM PieceBlockOffsetSize WHERE PieceCid = $1 LIMIT 2100`
 	rows, err := db.db.QueryContext(ctx, qry, pieceCid.Bytes())
 	if err != nil {
 		return nil, err

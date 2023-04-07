@@ -6,7 +6,9 @@ import (
 	_ "embed"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/filecoin-project/boostd-data/model"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car/v2/index"
@@ -287,6 +289,8 @@ func (db *Postgres) GetOffsetSize(ctx context.Context, pieceCid cid.Cid, hash mu
 }
 
 func (db *Postgres) GetIterableIndex(ctx context.Context, pieceCid cid.Cid) (index.IterableIndex, error) {
+	start := time.Now()
+
 	qry := `SELECT PayloadMultihash, BlockOffset FROM PieceBlockOffsetSize WHERE PieceCid = $1`
 	rows, err := db.db.QueryContext(ctx, qry, pieceCid.Bytes())
 	if err != nil {
@@ -316,6 +320,8 @@ func (db *Postgres) GetIterableIndex(ctx context.Context, pieceCid cid.Cid) (ind
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	metrics.GetOrRegisterResettingTimer("runner.get-iterable-index.query", nil).UpdateSince(start)
 
 	mis := make(index.MultihashIndexSorted)
 	err = mis.Load(records)

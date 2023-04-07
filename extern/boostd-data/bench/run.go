@@ -225,9 +225,8 @@ func addPieces(ctx context.Context, db BenchDB, parallelism int, pieceCount int,
 
 func bitswapCmd(createDB func(context.Context, *cli.Context) (BenchDB, error)) *cli.Command {
 	return &cli.Command{
-		Name:   "bitswap",
-		Before: before,
-		Flags:  append(bitswapFlags, connectStringFlag),
+		Name:  "bitswap",
+		Flags: append(bitswapFlags, connectStringFlag),
 		Action: func(cctx *cli.Context) error {
 			ctx := cliutil.ReqContext(cctx)
 			db, err := createDB(ctx, cctx)

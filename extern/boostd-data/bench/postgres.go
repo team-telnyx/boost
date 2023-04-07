@@ -92,7 +92,8 @@ func (db *Postgres) Cleanup(ctx context.Context) error {
 }
 
 func (db *Postgres) GetBlockSample(ctx context.Context, count int) ([]pieceBlock, error) {
-	qry := `SELECT PieceCid, PayloadMultihash FROM PieceBlockOffsetSize ORDER BY RANDOM() LIMIT $1`
+	//qry := `SELECT PieceCid, PayloadMultihash FROM PieceBlockOffsetSize ORDER BY RANDOM() LIMIT $1`
+	qry := `SELECT PieceCid, PayloadMultihash FROM PieceBlockOffsetSize LIMIT $1`
 	rows, err := db.db.QueryContext(ctx, qry, count)
 	if err != nil {
 		return nil, err

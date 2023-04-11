@@ -5,10 +5,11 @@ package main
 import (
 	"context"
 	"encoding/binary"
-	"golang.org/x/sync/errgroup"
+	"time"
 
 	"github.com/apple/foundationdb/bindings/go/src/fdb"
 	"github.com/apple/foundationdb/bindings/go/src/fdb/tuple"
+	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/filecoin-project/boostd-data/model"
 	"github.com/ipfs/go-cid"
 	"github.com/ipld/go-car/v2/index"
@@ -36,9 +37,6 @@ func createFoundation(ctx context.Context, cctx *cli.Context) (BenchDB, error) {
 const (
 	MHToPiecePrefix = "mp"
 	PieceToMHIndex  = "pm"
-
-	MaxRecordsPerTxn      = 100
-	MaxParallelTxnsPerAdd = 20
 )
 
 type FoundationDB struct {
@@ -163,42 +161,27 @@ func (db *FoundationDB) AddIndexRecords(ctx context.Context, pieceCid cid.Cid, r
 
 	pieceCidBytes := pieceCid.Bytes()
 
-	g, ctx := errgroup.WithContext(ctx)
-
-	sem := make(chan struct{}, MaxParallelTxnsPerAdd)
-	for i := 0; i < len(recs); i += MaxRecordsPerTxn {
-		sem <- struct{}{}
-		start := i
-		end := i + MaxRecordsPerTxn
-		if end > len(recs) {
-			end = len(recs)
-		}
-		chunk := recs[start:end] // No need to shadow variable since we're using a range expression
-		g.Go(func() error {
-			defer func() { <-sem }()
-			return db.addRecordChunk(ctx, pieceCidBytes, chunk)
-		})
-	}
-
-	return g.Wait()
-}
-
-func (db *FoundationDB) addRecordChunk(ctx context.Context, pieceCidBytes []byte, recs []model.Record) error {
 	_, err := db.db.Transact(func(tr fdb.Transaction) (interface{}, error) {
 		for _, rec := range recs {
-			mhashBytes := []byte(rec.Cid.Hash())
+			func() {
+				defer func(now time.Time) {
+					metrics.GetOrRegisterResettingTimer("fdb.tr", nil).UpdateSince(now)
+				}(time.Now())
 
-			offsetSizeBytes := make([]byte, 16)
-			binary.BigEndian.PutUint64(offsetSizeBytes, rec.Offset)
-			binary.BigEndian.PutUint64(offsetSizeBytes[8:], rec.Size)
+				mhashBytes := []byte(rec.Cid.Hash())
 
-			// Add payload to pieces index
-			payloadToPiecesKey := tuple.Tuple{MHToPiecePrefix, mhashBytes, pieceCidBytes}.FDBKey()
-			tr.Set(payloadToPiecesKey, []byte{})
+				offsetSizeBytes := make([]byte, 16)
+				binary.BigEndian.PutUint64(offsetSizeBytes, rec.Offset)
+				binary.BigEndian.PutUint64(offsetSizeBytes[8:], rec.Size)
 
-			// Add piece to block info index
-			pieceBlockKey := tuple.Tuple{PieceToMHIndex, pieceCidBytes, mhashBytes}.FDBKey()
-			tr.Set(pieceBlockKey, offsetSizeBytes)
+				// Add payload to pieces index
+				payloadToPiecesKey := tuple.Tuple{MHToPiecePrefix, mhashBytes, pieceCidBytes}.FDBKey()
+				tr.Set(payloadToPiecesKey, []byte{})
+
+				// Add piece to block info index
+				pieceBlockKey := tuple.Tuple{PieceToMHIndex, pieceCidBytes, mhashBytes}.FDBKey()
+				tr.Set(pieceBlockKey, offsetSizeBytes)
+			}()
 		}
 		return nil, nil
 	})

@@ -151,7 +151,7 @@ func TestMultipleDealsConcurrent(t *testing.T) {
 	defer harness.Stop()
 
 	tds := harness.executeNDealsConcurrentAndWaitFor(t, nDeals, func(i int) *testDeal {
-		return harness.newDealBuilder(t, 1).withAllMinerCallsNonBlocking().withNormalHttpServer().build()
+		return harness.newDealBuilder(t, i).withAllMinerCallsNonBlocking().withNormalHttpServer().build()
 	}, func(_ int, td *testDeal) error {
 		return td.waitForCheckpoint(dealcheckpoints.AddedPiece)
 	})
@@ -1841,7 +1841,7 @@ func (ph *ProviderHarness) newDealBuilder(t *testing.T, seed int, opts ...dealPr
 		require.NoError(tbuilder.t, err)
 		carData, err := io.ReadAll(r)
 		require.NoError(tbuilder.t, err)
-		carv1Path := path.Join(tbuilder.ph.TempDir, "v1.car")
+		carv1Path := path.Join(tbuilder.ph.TempDir, fmt.Sprintf("%s.v2.car", rootCid))
 		err = os.WriteFile(carv1Path, carData, 0644)
 		require.NoError(tbuilder.t, err)
 		rd, err := carv2.OpenReader(carv1Path)

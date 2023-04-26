@@ -133,7 +133,7 @@ func (m *UnsealedStateManager) checkForUpdates(ctx context.Context) error {
 					usmlog.Infow("announced to index provider that deal has been removed",
 						"deal id", deal.DealID, "sector id", deal.SectorID.Number, "announce cid", announceCid.String())
 				}
-			} else {
+			} else if sectorSealState != db.SealStateCache {
 				// Announce deals that have changed seal state to indexer
 				md := metadata.GraphsyncFilecoinV1{
 					PieceCID:      deal.DealProposal.Proposal.PieceCID,

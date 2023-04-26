@@ -84,7 +84,7 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, h host.Host, r repo.Loc
 	}
 }
 
-func (w *Wrapper) Start() {
+func (w *Wrapper) Start(ctx context.Context) {
 	w.prov.RegisterMultihashLister(w.MultihashLister)
 
 	runCtx, runCancel := context.WithCancel(context.Background())

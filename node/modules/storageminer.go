@@ -421,7 +421,7 @@ func HandleBoostLibp2pDeals(lc fx.Lifecycle, h host.Host, prov *storagemarket.Pr
 			// It overrides the multihash lister registered by the legacy
 			// index provider so it must start after the legacy SP.
 			log.Info("starting boost index provider wrapper")
-			idxProv.Start()
+			idxProv.Start(ctx)
 			log.Info("boost index provider wrapper started successfully")
 			return nil
 		},

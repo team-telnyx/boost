@@ -182,7 +182,9 @@ func (m *UnsealedStateManager) getStateUpdates(ctx context.Context) (map[abi.Sec
 			case storageState.SectorFileType.Has(storiface.FTUnsealed):
 				sectorStates[storageState.SectorID] = db.SealStateUnsealed
 			case storageState.SectorFileType.Has(storiface.FTSealed):
-				sectorStates[storageState.SectorID] = db.SealStateSealed
+				if state, ok := sectorStates[storageState.SectorID]; !ok || state != db.SealStateUnsealed {
+					sectorStates[storageState.SectorID] = db.SealStateSealed
+				}
 			}
 
 			// If the state hasnt been set it should be in the cache, mark it so we dont remove

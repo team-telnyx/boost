@@ -119,6 +119,7 @@ func (m *UnsealedStateManager) checkForUpdates(ctx context.Context) error {
 			propCid := propnd.Cid()
 
 			if sectorSealState == db.SealStateRemoved {
+				continue
 				// Announce deals that are no longer unsealed to indexer
 				announceCid, err := m.idxprov.AnnounceBoostDealRemoved(ctx, propCid)
 				if err != nil {
@@ -174,9 +175,14 @@ func (m *UnsealedStateManager) getStateUpdates(ctx context.Context) (map[abi.Sec
 	}
 
 	// Convert to a map of <sector id> => <seal state>
-	sectorStates := make(map[abi.SectorID]db.SealState, len(storageList))
+	sectorStates := make(map[abi.SectorID]db.SealState)
+	count := 0
 	for _, storageStates := range storageList {
 		for _, storageState := range storageStates {
+			count++
+			usmlog.Infow("storage state",
+				"sector id", storageState.SectorID,
+				"sector file tuype", storageState.SectorFileType)
 			// Explicity set the sector state if its Sealed or Unsealed
 			switch {
 			case storageState.SectorFileType.Has(storiface.FTUnsealed):
@@ -192,6 +198,10 @@ func (m *UnsealedStateManager) getStateUpdates(ctx context.Context) (map[abi.Sec
 			}
 		}
 	}
+
+	usmlog.Infow("updating sectors",
+		"storage list api results length", len(storageList),
+		"checked sector state total of", len(sectorStates))
 
 	// Get the previously known state of all sectors in the database
 	previousSectorStates, err := m.sdb.List(ctx)
@@ -212,6 +222,7 @@ func (m *UnsealedStateManager) getStateUpdates(ctx context.Context) (map[abi.Sec
 			// sectors in the map are ones we didn't know about before
 			delete(sectorStates, previousSectorState.SectorID)
 		} else {
+			usmlog.Infow("previous state not found", "previous sector", previousSectorState.SectorID, "previous seal state", previousSectorState.SealState)
 			// The sector is no longer in the list, so it must have been removed
 			sealStateUpdates[previousSectorState.SectorID] = db.SealStateRemoved
 		}

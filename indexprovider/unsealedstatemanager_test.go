@@ -249,6 +249,29 @@ func TestUnsealedStateManagerStateChange(t *testing.T) {
 				FastRetrieval: true,
 			})).Times(1)
 		},
+	}, {
+		name: "unsealed -> cache",
+		storageListResponse1: func(sectorID abi.SectorID) *storiface.Decl {
+			return &storiface.Decl{
+				SectorID:       sectorID,
+				SectorFileType: storiface.FTUnsealed,
+			}
+		},
+		storageListResponse2: func(sectorID abi.SectorID) *storiface.Decl {
+			return &storiface.Decl{
+				SectorID:       sectorID,
+				SectorFileType: storiface.FTCache,
+			}
+		},
+		expect: func(prov *mock_provider.MockInterfaceMockRecorder, prop market.DealProposal) {
+			// Expect only one call to NotifyPut with fast retrieval = true (unsealed)
+			// because we ignore a state change to cache
+			prov.NotifyPut(gomock.Any(), gomock.Any(), gomock.Any(), metadata.Default.New(&metadata.GraphsyncFilecoinV1{
+				PieceCID:      prop.PieceCID,
+				VerifiedDeal:  prop.VerifiedDeal,
+				FastRetrieval: true,
+			})).Times(1)
+		},
 	}}
 
 	for _, tc := range testCases {

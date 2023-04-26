@@ -33,7 +33,6 @@ var log = logging.Logger("index-provider-wrapper")
 var defaultDagStoreDir = "dagstore"
 
 type Wrapper struct {
-	ctx            context.Context
 	cfg            *config.Boost
 	enabled        bool
 	dealsDB        *db.DealsDB

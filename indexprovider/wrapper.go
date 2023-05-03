@@ -124,6 +124,40 @@ func (w *Wrapper) AnnounceExtendedProviders(ctx context.Context) error {
 	key := w.h.Peerstore().PrivKey(w.h.ID())
 	adBuilder := xproviders.NewAdBuilder(w.h.ID(), key, w.h.Addrs())
 
+	err := w.appendExtendedProviders(ctx, adBuilder, key)
+	if err != nil {
+		return err
+	}
+
+	last, _, err := w.prov.GetLatestAdv(ctx)
+	if err != nil {
+		return err
+	}
+	adBuilder.WithLastAdID(last)
+	ad, err := adBuilder.BuildAndSign()
+	if err != nil {
+		return err
+	}
+
+	// make sure we're connected to the mesh so that the message will go through
+	// pubsub and reach the indexer
+	err = w.meshCreator.Connect(ctx)
+	if err != nil {
+		log.Warnf("could not connect to pubsub mesh before announcing extended provider: %w", err)
+	}
+
+	// publish the extended providers announcement
+	adCid, err := w.prov.Publish(ctx, *ad)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("announced endpoint to indexer with advertisement cid %s", adCid)
+
+	return nil
+}
+
+func (w *Wrapper) appendExtendedProviders(ctx context.Context, adBuilder *xproviders.AdBuilder, key crypto.PrivKey) error {
 	if !w.bitswapEnabled {
 		// If bitswap is completely disabled, publish an advertisement with empty extended providers
 		// which should override previously published extended providers associated to w.h.ID().
@@ -184,31 +218,6 @@ func (w *Wrapper) AnnounceExtendedProviders(ctx context.Context) error {
 		}
 		adBuilder.WithExtendedProviders(ep)
 	}
-
-	last, _, err := w.prov.GetLatestAdv(ctx)
-	if err != nil {
-		return err
-	}
-	adBuilder.WithLastAdID(last)
-	ad, err := adBuilder.BuildAndSign()
-	if err != nil {
-		return err
-	}
-
-	// make sure we're connected to the mesh so that the message will go through
-	// pubsub and reach the indexer
-	err = w.meshCreator.Connect(ctx)
-	if err != nil {
-		log.Warnf("could not connect to pubsub mesh before announcing extended provider: %w", err)
-	}
-
-	// publish the extended providers announcement
-	adCid, err := w.prov.Publish(ctx, *ad)
-	if err != nil {
-		return err
-	}
-
-	log.Infof("announced endpoint to indexer with advertisement cid %s", adCid)
 
 	return nil
 }

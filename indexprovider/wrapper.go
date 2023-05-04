@@ -21,12 +21,14 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
+	ipni_meta "github.com/ipni/go-libipni/metadata"
 	provider "github.com/ipni/index-provider"
 	"github.com/ipni/index-provider/engine/xproviders"
 	"github.com/ipni/index-provider/metadata"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	host "github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/multiformats/go-multicodec"
 	"go.uber.org/fx"
 )
 
@@ -47,6 +49,7 @@ type Wrapper struct {
 	// bitswapEnabled records whether to announce bitswap as an available
 	// protocol to the network indexer
 	bitswapEnabled bool
+	httpEnabled    bool
 	stop           context.CancelFunc
 }
 
@@ -65,6 +68,8 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, h host.Host, r repo.Loc
 
 		// bitswap is enabled if there is a bitswap peer id
 		bitswapEnabled := cfg.Dealmaking.BitswapPeerID != ""
+		// http is considered enabled if there is an http retrieval multiaddr set
+		httpEnabled := cfg.Dealmaking.HTTPRetrievalMultiaddr != ""
 
 		// setup bitswap extended provider if there is a public multi addr for bitswap
 		w := &Wrapper{
@@ -76,6 +81,7 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, h host.Host, r repo.Loc
 			meshCreator:    meshCreator,
 			cfg:            cfg,
 			bitswapEnabled: bitswapEnabled,
+			httpEnabled:    httpEnabled,
 			enabled:        !isDisabled,
 		}
 		w.usm = NewUnsealedStateManager(w, legacyProv, dealsDB, ssDB, storageService, w.cfg.Storage)
@@ -158,6 +164,10 @@ func (w *Wrapper) AnnounceExtendedProviders(ctx context.Context) error {
 }
 
 func (w *Wrapper) appendExtendedProviders(ctx context.Context, adBuilder *xproviders.AdBuilder, key crypto.PrivKey) error {
+	// TODO: this will no longer be needed once metadata from go-libipni is being used
+	// metadata.Default will be usable instead of `metadataContext` for all below calls
+	metadataContext := metadata.Default.WithProtocol(multicodec.TransportIpfsGatewayHttp, func() metadata.Protocol { return &ipni_meta.IpfsGatewayHttp{} })
+
 	if !w.bitswapEnabled {
 		// If bitswap is completely disabled, publish an advertisement with empty extended providers
 		// which should override previously published extended providers associated to w.h.ID().
@@ -167,7 +177,7 @@ func (w *Wrapper) appendExtendedProviders(ctx context.Context, adBuilder *xprovi
 		// we announce it as metadata on the main provider
 
 		// marshal bitswap metadata
-		meta := metadata.Default.New(metadata.Bitswap{})
+		meta := metadataContext.New(metadata.Bitswap{})
 		mbytes, err := meta.MarshalBinary()
 		if err != nil {
 			return err
@@ -216,6 +226,25 @@ func (w *Wrapper) appendExtendedProviders(ctx context.Context, adBuilder *xprovi
 				Metadata: mbytes,
 			}
 		}
+		adBuilder.WithExtendedProviders(ep)
+	}
+
+	if !w.httpEnabled {
+		log.Info("Dealmaking.HTTPRetrievalMultiaddr is not set - announcing http disabled to Indexer")
+	} else {
+		// marshal http metadata
+		meta := metadataContext.New(ipni_meta.IpfsGatewayHttp{})
+		mbytes, err := meta.MarshalBinary()
+		if err != nil {
+			return err
+		}
+		var ep = xproviders.Info{
+			Addrs:    []string{w.cfg.Dealmaking.HTTPRetrievalMultiaddr},
+			Metadata: mbytes,
+		}
+
+		log.Infof("announcing http endpoint to indexer as extended provider: %s", ep.Addrs)
+
 		adBuilder.WithExtendedProviders(ep)
 	}
 

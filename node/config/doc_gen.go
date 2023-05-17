@@ -68,12 +68,6 @@ your node if metadata log is disabled`,
 			Comment: ``,
 		},
 		{
-			Name: "LocalIndexDirectory",
-			Type: "LocalIndexDirectoryConfig",
-
-			Comment: ``,
-		},
-		{
 			Name: "ContractDeals",
 			Type: "ContractDealsConfig",
 
@@ -99,7 +93,7 @@ your node if metadata log is disabled`,
 		},
 		{
 			Name: "IndexProvider",
-			Type: "lotus_config.IndexProviderConfig",
+			Type: "IndexProviderConfig",
 
 			Comment: ``,
 		},
@@ -442,109 +436,78 @@ for any other deal.`,
 			Comment: `The port that the graphql server listens on`,
 		},
 	},
-	"LocalIndexDirectoryConfig": []DocField{
+	"IndexProviderConfig": []DocField{
 		{
-			Name: "Yugabyte",
-			Type: "LocalIndexDirectoryYugabyteConfig",
+			Name: "Enable",
+			Type: "bool",
 
-			Comment: ``,
+			Comment: `Enable set whether to enable indexing announcement to the network and expose endpoints that
+allow indexer nodes to process announcements. Enabled by default.`,
 		},
 		{
-			Name: "Couchbase",
-			Type: "LocalIndexDirectoryCouchbaseConfig",
-
-			Comment: ``,
-		},
-		{
-			Name: "ParallelAddIndexLimit",
+			Name: "EntriesCacheCapacity",
 			Type: "int",
 
-			Comment: `The maximum number of add index operations allowed to execute in parallel.
-The add index operation is executed when a new deal is created - it fetches
-the piece from the sealing subsystem, creates an index of where each block
-is in the piece, and adds the index to the local index directory.`,
+			Comment: `EntriesCacheCapacity sets the maximum capacity to use for caching the indexing advertisement
+entries. Defaults to 1024 if not specified. The cache is evicted using LRU policy. The
+maximum storage used by the cache is a factor of EntriesCacheCapacity, EntriesChunkSize and
+the length of multihashes being advertised. For example, advertising 128-bit long multihashes
+with the default EntriesCacheCapacity, and EntriesChunkSize means the cache size can grow to
+256MiB when full.`,
 		},
 		{
-			Name: "EmbeddedServicePort",
-			Type: "uint64",
+			Name: "EntriesChunkSize",
+			Type: "int",
 
-			Comment: `The port that the embedded local index directory data service runs on.
-Set this value to zero to disable the embedded local index directory data service
-(in that case the local index directory data service must be running externally)`,
+			Comment: `EntriesChunkSize sets the maximum number of multihashes to include in a single entries chunk.
+Defaults to 16384 if not specified. Note that chunks are chained together for indexing
+advertisements that include more multihashes than the configured EntriesChunkSize.`,
 		},
 		{
-			Name: "ServiceApiInfo",
+			Name: "TopicName",
 			Type: "string",
 
-			Comment: `The connect string for the local index directory data service RPC API eg "http://localhost:8042"
-Set this value to "" if the local index directory data service is embedded.`,
+			Comment: `TopicName sets the topic name on which the changes to the advertised content are announced.
+If not explicitly specified, the topic name is automatically inferred from the network name
+in following format: '/indexer/ingest/<network-name>'
+Defaults to empty, which implies the topic name is inferred from network name.`,
 		},
-	},
-	"LocalIndexDirectoryCouchbaseBucketConfig": []DocField{
 		{
-			Name: "RAMQuotaMB",
-			Type: "uint64",
+			Name: "PurgeCacheOnStart",
+			Type: "bool",
 
-			Comment: `Bucket setting RAMQuotaMB`,
-		},
-	},
-	"LocalIndexDirectoryCouchbaseConfig": []DocField{
-		{
-			Name: "ConnectString",
-			Type: "string",
-
-			Comment: `The couchbase connect string eg "couchbase://127.0.0.1"
-If empty, a leveldb database is used instead.`,
+			Comment: `PurgeCacheOnStart sets whether to clear any cached entries chunks when the provider engine
+starts. By default, the cache is rehydrated from previously cached entries stored in
+datastore if any is present.`,
 		},
 		{
-			Name: "Username",
-			Type: "string",
-
-			Comment: ``,
-		},
-		{
-			Name: "Password",
-			Type: "string",
-
-			Comment: ``,
-		},
-		{
-			Name: "PieceMetadataBucket",
-			Type: "LocalIndexDirectoryCouchbaseBucketConfig",
-
-			Comment: ``,
-		},
-		{
-			Name: "MultihashToPiecesBucket",
-			Type: "LocalIndexDirectoryCouchbaseBucketConfig",
-
-			Comment: ``,
-		},
-		{
-			Name: "PieceOffsetsBucket",
-			Type: "LocalIndexDirectoryCouchbaseBucketConfig",
+			Name: "HttpPublisher",
+			Type: "IndexProviderHttpPublisherConfig",
 
 			Comment: ``,
 		},
 	},
-	"LocalIndexDirectoryYugabyteConfig": []DocField{
+	"IndexProviderHttpPublisherConfig": []DocField{
 		{
 			Name: "Enabled",
 			Type: "bool",
 
-			Comment: ``,
+			Comment: `If not enabled, requests are served over graphsync instead.`,
 		},
 		{
-			Name: "ConnectString",
+			Name: "PublicHostname",
 			Type: "string",
 
-			Comment: `The yugabyte postgres connect string eg "postgresql://postgres:postgres@localhost"`,
+			Comment: `Set the public hostname / IP for the index provider listener.
+eg "82.129.73.111"
+This is usually the same as the for the boost node.`,
 		},
 		{
-			Name: "Hosts",
-			Type: "[]string",
+			Name: "Port",
+			Type: "int",
 
-			Comment: `The yugabyte cassandra hosts eg ["127.0.0.1"]`,
+			Comment: `Set the port on which to listen for index provider requests over HTTP.
+Note that this port must be open on the firewall.`,
 		},
 	},
 	"LotusDealmakingConfig": []DocField{

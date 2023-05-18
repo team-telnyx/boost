@@ -199,7 +199,7 @@ func DefaultBoost() *Boost {
 
 			Announce: IndexProviderAnnounceConfig{
 				AnnounceOverHttp:   false,
-				DirectAnnounceURLs: []string{"https://cid.contact"},
+				DirectAnnounceURLs: []string{"https://cid.contact/ingest/announce"},
 			},
 
 			HttpPublisher: IndexProviderHttpPublisherConfig{

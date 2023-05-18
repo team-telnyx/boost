@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -20,6 +22,7 @@ import (
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
 	provider "github.com/ipni/index-provider"
+	"github.com/ipni/index-provider/engine"
 	"github.com/ipni/index-provider/engine/xproviders"
 	"github.com/ipni/index-provider/metadata"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -81,25 +84,6 @@ func NewWrapper(cfg *config.Boost) func(lc fx.Lifecycle, h host.Host, r repo.Loc
 		w.usm = NewUnsealedStateManager(w, legacyProv, dealsDB, ssDB, storageService, w.cfg.Storage)
 		return w, nil
 	}
-}
-
-func (w *Wrapper) Start(ctx context.Context) {
-	w.prov.RegisterMultihashLister(w.MultihashLister)
-
-	runCtx, runCancel := context.WithCancel(context.Background())
-	w.stop = runCancel
-
-	// Watch for changes in sector unseal state and update the
-	// indexer when there are changes
-	go w.usm.Run(runCtx)
-
-	// Announce all deals on startup in case of a config change
-	go func() {
-		err := w.AnnounceExtendedProviders(runCtx)
-		if err != nil {
-			log.Warnf("announcing extended providers: %w", err)
-		}
-	}()
 }
 
 func (w *Wrapper) Stop() {
@@ -325,6 +309,94 @@ func (w *Wrapper) MultihashLister(ctx context.Context, prov peer.ID, contextID [
 	}
 
 	return nil, fmt.Errorf("failed to look up deal in Boost, err=%s and Legacy Markets, err=%s", boostErr, legacyErr)
+}
+
+func (w *Wrapper) IndexerAnnounceLatest(ctx context.Context) (cid.Cid, error) {
+	e, ok := w.prov.(*engine.Engine)
+	if !ok {
+		return cid.Undef, fmt.Errorf("index provider is disabled")
+	}
+	return e.PublishLatest(ctx)
+}
+
+func (w *Wrapper) IndexerAnnounceLatestHttp(ctx context.Context, announceUrls []string) (cid.Cid, error) {
+	e, ok := w.prov.(*engine.Engine)
+	if !ok {
+		return cid.Undef, fmt.Errorf("index provider is disabled")
+	}
+
+	if len(announceUrls) == 0 {
+		announceUrls = w.cfg.IndexProvider.Announce.DirectAnnounceURLs
+	}
+
+	urls := make([]*url.URL, 0, len(announceUrls))
+	for _, us := range announceUrls {
+		u, err := url.Parse(us)
+		if err != nil {
+			return cid.Undef, fmt.Errorf("parsing url %s: %w", us, err)
+		}
+		urls = append(urls, u)
+	}
+	return e.PublishLatestHTTP(ctx, urls...)
+}
+
+func (w *Wrapper) Start(ctx context.Context) {
+	// re-init dagstore shards for Boost deals if needed
+	if _, err := w.DagstoreReinitBoostDeals(ctx); err != nil {
+		log.Errorw("failed to migrate dagstore indices for Boost deals", "err", err)
+	}
+
+	w.prov.RegisterMultihashLister(func(ctx context.Context, pid peer.ID, contextID []byte) (provider.MultihashIterator, error) {
+		provideF := func(pieceCid cid.Cid) (provider.MultihashIterator, error) {
+			ii, err := w.dagStore.GetIterableIndexForPiece(pieceCid)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get iterable index: %w", err)
+			}
+
+			mhi, err := provider.CarMultihashIterator(ii)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get mhiterator: %w", err)
+			}
+			return mhi, nil
+		}
+
+		// convert context ID to proposal Cid
+		proposalCid, err := cid.Cast(contextID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast context ID to a cid")
+		}
+
+		// go from proposal cid -> piece cid by looking up deal in boost and if we can't find it there -> then markets
+		// check Boost deals DB
+		pds, boostErr := w.dealsDB.BySignedProposalCID(ctx, proposalCid)
+		if boostErr == nil {
+			pieceCid := pds.ClientDealProposal.Proposal.PieceCID
+			return provideF(pieceCid)
+		}
+
+		// check in legacy markets
+		md, legacyErr := w.legacyProv.GetLocalDeal(proposalCid)
+		if legacyErr == nil {
+			return provideF(md.Proposal.PieceCID)
+		}
+
+		return nil, fmt.Errorf("failed to look up deal in Boost, err=%s and Legacy Markets, err=%s", boostErr, legacyErr)
+	})
+
+	runCtx, runCancel := context.WithCancel(context.Background())
+	w.stop = runCancel
+
+	// Watch for changes in sector unseal state and update the
+	// indexer when there are changes
+	go w.usm.Run(runCtx)
+
+	// Announce all deals on startup in case of a config change
+	go func() {
+		err := w.AnnounceExtendedProviders(runCtx)
+		if err != nil {
+			log.Warnf("announcing extended providers: %w", err)
+		}
+	}()
 }
 
 func (w *Wrapper) AnnounceBoostDeal(ctx context.Context, deal *types.ProviderDealState) (cid.Cid, error) {

@@ -309,7 +309,19 @@ type IndexProviderConfig struct {
 	// datastore if any is present.
 	PurgeCacheOnStart bool
 
+	Announce IndexProviderAnnounceConfig
+
 	HttpPublisher IndexProviderHttpPublisherConfig
+}
+
+type IndexProviderAnnounceConfig struct {
+	// Make a direct announcement to a list of indexing nodes over http.
+	// Note that announcements are already made over pubsub regardless
+	// of this setting.
+	AnnounceOverHttp bool
+
+	// The list of URLs of indexing nodes to announce to.
+	DirectAnnounceURLs []string
 }
 
 type IndexProviderHttpPublisherConfig struct {

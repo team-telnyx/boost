@@ -197,6 +197,11 @@ func DefaultBoost() *Boost {
 			TopicName:         "",
 			PurgeCacheOnStart: false,
 
+			Announce: IndexProviderAnnounceConfig{
+				AnnounceOverHttp:   false,
+				DirectAnnounceURLs: []string{"https://cid.contact"},
+			},
+
 			HttpPublisher: IndexProviderHttpPublisherConfig{
 				Enabled:        false,
 				PublicHostname: "",

@@ -436,6 +436,22 @@ for any other deal.`,
 			Comment: `The port that the graphql server listens on`,
 		},
 	},
+	"IndexProviderAnnounceConfig": []DocField{
+		{
+			Name: "AnnounceOverHttp",
+			Type: "bool",
+
+			Comment: `Make a direct announcement to a list of indexing nodes over http.
+Note that announcements are already made over pubsub regardless
+of this setting.`,
+		},
+		{
+			Name: "DirectAnnounceURLs",
+			Type: "[]string",
+
+			Comment: `The list of URLs of indexing nodes to announce to.`,
+		},
+	},
 	"IndexProviderConfig": []DocField{
 		{
 			Name: "Enable",
@@ -479,6 +495,12 @@ Defaults to empty, which implies the topic name is inferred from network name.`,
 			Comment: `PurgeCacheOnStart sets whether to clear any cached entries chunks when the provider engine
 starts. By default, the cache is rehydrated from previously cached entries stored in
 datastore if any is present.`,
+		},
+		{
+			Name: "Announce",
+			Type: "IndexProviderAnnounceConfig",
+
+			Comment: ``,
 		},
 		{
 			Name: "HttpPublisher",

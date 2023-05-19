@@ -7,6 +7,7 @@ import (
 	"fmt"
 	dsvctypes "github.com/filecoin-project/boostd-data/svc/types"
 	"github.com/ipfs/go-datastore"
+	"github.com/ipld/go-ipld-prime"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -293,7 +294,7 @@ func (w *Wrapper) IndexerAnnounceAllDeals(ctx context.Context) error {
 var ErrStringSkipAdIngest = "content not found"
 
 func skipError(err error) error {
-	return fmt.Errorf("%s: %w", ErrStringSkipAdIngest, err)
+	return fmt.Errorf("%s: %s: %w", ErrStringSkipAdIngest, err.Error(), ipld.ErrNotExists{})
 }
 
 func (w *Wrapper) MultihashLister(ctx context.Context, prov peer.ID, contextID []byte) (provider.MultihashIterator, error) {

@@ -746,6 +746,12 @@ var DefaultViews = func() []*view.View {
 		lotusmetrics.DagStorePRSeekBackCountView,
 		lotusmetrics.DagStorePRSeekForwardBytesView,
 		lotusmetrics.DagStorePRSeekForwardCountView,
+
+		lotusmetrics.DagStorePRAtHitBytesView,
+		lotusmetrics.DagStorePRAtHitCountView,
+		lotusmetrics.DagStorePRAtCacheFillCountView,
+		lotusmetrics.DagStorePRAtReadBytesView,
+		lotusmetrics.DagStorePRAtReadCountView,
 	}
 	//views = append(views, blockstore.DefaultViews...)
 	views = append(views, rpcmetrics.DefaultViews...)

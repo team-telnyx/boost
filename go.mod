@@ -71,7 +71,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-merkledag v0.9.0
 	github.com/ipfs/go-metrics-interface v0.0.1
-	github.com/ipfs/go-unixfs v0.4.3
+	github.com/ipfs/go-unixfs v0.4.4
 	github.com/ipld/go-car v0.5.0
 	github.com/ipld/go-car/v2 v2.7.0
 	github.com/ipld/go-ipld-prime v0.20.0
@@ -81,10 +81,10 @@ require (
 	github.com/jbenet/go-random v0.0.0-20190219211222-123a90aedc0c
 	github.com/jpillora/backoff v1.0.0
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/libp2p/go-libp2p v0.26.2
+	github.com/libp2p/go-libp2p v0.26.3
 	github.com/libp2p/go-libp2p-gostream v0.6.0
 	github.com/libp2p/go-libp2p-http v0.4.0
-	github.com/libp2p/go-libp2p-kad-dht v0.21.0
+	github.com/libp2p/go-libp2p-kad-dht v0.21.1
 	github.com/libp2p/go-libp2p-pubsub v0.9.3
 	github.com/libp2p/go-libp2p-record v0.2.0
 	github.com/libp2p/go-msgio v0.3.0
@@ -256,7 +256,7 @@ require (
 	github.com/libp2p/go-libp2p-gorpc v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.5.0 // indirect
 	github.com/libp2p/go-libp2p-raft v0.4.0 // indirect
-	github.com/libp2p/go-libp2p-routing-helpers v0.6.0 // indirect
+	github.com/libp2p/go-libp2p-routing-helpers v0.6.1 // indirect
 	github.com/libp2p/go-maddr-filter v0.1.0 // indirect
 	github.com/libp2p/go-mplex v0.7.0 // indirect
 	github.com/libp2p/go-nat v0.1.0 // indirect
@@ -350,7 +350,7 @@ require (
 	github.com/filecoin-project/boost-gfm v1.26.5
 	github.com/filecoin-project/boost-graphsync v0.13.6
 	github.com/filecoin-project/go-data-transfer/v2 v2.0.0-rc4
-	github.com/ipfs/kubo v0.18.1
+	github.com/ipfs/kubo v0.19.0
 )
 
 require (

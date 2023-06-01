@@ -13,6 +13,7 @@ import (
 	"github.com/filecoin-project/boost/retrievalmarket/lp2pimpl"
 	"github.com/filecoin-project/boostd-data/shared/cliutil"
 	"github.com/filecoin-project/go-address"
+
 	// TODO: This multiaddr util library should probably live in its own repo
 	multiaddrutil "github.com/filecoin-project/go-legs/httpsync/multiaddr"
 	"github.com/filecoin-project/lotus/chain/types"
@@ -186,6 +187,27 @@ var storageAskCmd = &cli.Command{
 		}
 
 		ask := resp.Ask.Ask
+
+		if cctx.Bool("jsontx") {
+			out := TxMinerStorageAsk{
+				Miner:             maddr.String(),
+				PricePerG:         types.FIL(ask.Price).String(),
+				VerifiedPricePerG: types.FIL(ask.VerifiedPrice).String(),
+				MaxSize:           types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))),
+				MinSize:           types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))),
+			}
+
+			if size := cctx.Int64("size"); size > 0 {
+				perEpoch := types.BigDiv(types.BigMul(ask.Price, types.NewInt(uint64(size))), types.NewInt(1<<30))
+				out.PricePerBlock = types.FIL(perEpoch).String()
+
+				if duration := cctx.Int64("duration"); duration > 0 {
+					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).String()
+				}
+			}
+
+			return cmd.PrintJson(out)
+		}
 
 		afmt.Printf("Ask: %s\n", maddr)
 		afmt.Printf("Price per GiB: %s\n", types.FIL(ask.Price))

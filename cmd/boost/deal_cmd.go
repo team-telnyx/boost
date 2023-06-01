@@ -6,12 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
-	bcli "github.com/filecoin-project/boost/cli"
-	clinode "github.com/filecoin-project/boost/cli/node"
-	"github.com/filecoin-project/boost/cmd"
-	"github.com/filecoin-project/boost/storagemarket/types"
-	types2 "github.com/filecoin-project/boost/transport/types"
 	"github.com/filecoin-project/go-address"
 	cborutil "github.com/filecoin-project/go-cbor-util"
 	"github.com/filecoin-project/go-state-types/abi"
@@ -24,6 +20,12 @@ import (
 	"github.com/ipfs/go-cid"
 	inet "github.com/libp2p/go-libp2p/core/network"
 	"github.com/urfave/cli/v2"
+
+	bcli "github.com/filecoin-project/boost/cli"
+	clinode "github.com/filecoin-project/boost/cli/node"
+	"github.com/filecoin-project/boost/cmd"
+	"github.com/filecoin-project/boost/storagemarket/types"
+	types2 "github.com/filecoin-project/boost/transport/types"
 )
 
 const DealProtocolv120 = "/fil/storage/mk/1.2.0"
@@ -290,7 +292,7 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 	}
 
 	if !resp.Accepted {
-		return fmt.Errorf("deal proposal rejected: %s", resp.Message)
+		// return fmt.Errorf("deal proposal rejected: %s", resp.Message)
 	}
 
 	if cctx.Bool("json") {
@@ -307,6 +309,25 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 		if isOnline {
 			out["url"] = cctx.String("http-url")
 		}
+		return cmd.PrintJson(out)
+	}
+
+	if cctx.Bool("jsontx") {
+		out := TxStorageDeal{
+			DealUUID:        dealUuid.String(),
+			Miner:           maddr.String(),
+			WalletAddr:      walletAddr.String(),
+			RootCID:         rootCid.String(),
+			CommP:           dealProposal.Proposal.PieceCID.String(),
+			StartEpoch:      dealProposal.Proposal.StartEpoch.String(),
+			EndEpoch:        dealProposal.Proposal.EndEpoch.String(),
+			MinerCollateral: dealProposal.Proposal.ProviderCollateral.String(),
+			CarPullURL:      cctx.String("http-url"),
+			Accepted:        resp.Accepted,
+			Message:         resp.Message,
+			CreatedAt:       time.Now().Format(time.RFC3339),
+		}
+
 		return cmd.PrintJson(out)
 	}
 

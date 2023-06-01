@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	llog "log"
 	"os"
 
+	"github.com/filecoin-project/boost/build"
 	"github.com/filecoin-project/boost/cmd"
 
-	llog "log"
-
-	"github.com/filecoin-project/boost/build"
 	"github.com/filecoin-project/boostd-data/shared/cliutil"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
@@ -32,6 +31,7 @@ func main() {
 			cmd.FlagRepo,
 			cliutil.FlagVeryVerbose,
 			cmd.FlagJson,
+			FlagJsonTx,
 		},
 		Commands: []*cli.Command{
 			initCmd,

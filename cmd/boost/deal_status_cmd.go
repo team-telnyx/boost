@@ -130,6 +130,31 @@ var dealStatusCmd = &cli.Command{
 			return cmd.PrintJson(out)
 		}
 
+		if cctx.Bool("jsontx") {
+			out := TxStorageDealStatus{
+				Label:      lstr,
+				Miner:      maddr.String(),
+				WalletAddr: walletAddr.String(),
+				Error:      resp.Error,
+			}
+
+			if resp.DealStatus != nil {
+				out.DealUUID = resp.DealUUID.String()
+				out.DealID = int64(resp.DealStatus.ChainDealID)
+
+				if resp.DealStatus.PublishCid != nil {
+					out.DealCID = resp.DealStatus.PublishCid.String()
+				}
+
+				out.SealingStatus = resp.DealStatus.SealingStatus
+				out.Message = statusMessage(resp)
+				out.Status = statusToDealStatus(resp)
+
+			}
+
+			return cmd.PrintJson(out)
+		}
+
 		msg := "got deal status response"
 		msg += "\n"
 

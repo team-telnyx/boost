@@ -1,9 +1,10 @@
 package main
 
 import (
+	"github.com/urfave/cli/v2"
+
 	"github.com/filecoin-project/boost/storagemarket/types"
 	"github.com/filecoin-project/boost/storagemarket/types/dealcheckpoints"
-	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -21,13 +22,13 @@ var FlagJsonTx = &cli.BoolFlag{
 type TxDealStatus string
 
 type TxMinerStorageAsk struct {
-	Miner             string `json:"miner"`
-	PricePerBlock     string `json:"price_per_block"`
-	PricePerG         string `json:"price_per_g"`
-	TotalPrice        string `json:"total_price"`
-	VerifiedPricePerG string `json:"verified_price_per_g"`
-	MaxSize           string `json:"max_size"`
-	MinSize           string `json:"min_size"`
+	Miner              string `json:"miner_address"`
+	PricePerBlock      int64  `json:"price_per_block"`
+	PricePerGB         int64  `json:"price_per_gb"`
+	TotalPrice         int64  `json:"total_price"`
+	VerifiedPricePerGB int64  `json:"verified_price_per_gb"`
+	MaxSize            int64  `json:"max_size"`
+	MinSize            int64  `json:"min_size"`
 }
 
 type TxRetrievalDeal struct {

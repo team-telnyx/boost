@@ -7,12 +7,13 @@ import (
 
 	"github.com/filecoin-project/boost-gfm/retrievalmarket"
 	"github.com/filecoin-project/boost-gfm/storagemarket/network"
+	"github.com/filecoin-project/boostd-data/shared/cliutil"
+	"github.com/filecoin-project/go-address"
+
 	bcli "github.com/filecoin-project/boost/cli"
 	clinode "github.com/filecoin-project/boost/cli/node"
 	"github.com/filecoin-project/boost/cmd"
 	"github.com/filecoin-project/boost/retrievalmarket/lp2pimpl"
-	"github.com/filecoin-project/boostd-data/shared/cliutil"
-	"github.com/filecoin-project/go-address"
 
 	// TODO: This multiaddr util library should probably live in its own repo
 	multiaddrutil "github.com/filecoin-project/go-legs/httpsync/multiaddr"
@@ -190,19 +191,19 @@ var storageAskCmd = &cli.Command{
 
 		if cctx.Bool("jsontx") {
 			out := TxMinerStorageAsk{
-				Miner:             maddr.String(),
-				PricePerG:         types.FIL(ask.Price).String(),
-				VerifiedPricePerG: types.FIL(ask.VerifiedPrice).String(),
-				MaxSize:           types.SizeStr(types.NewInt(uint64(ask.MaxPieceSize))),
-				MinSize:           types.SizeStr(types.NewInt(uint64(ask.MinPieceSize))),
+				Miner:              maddr.String(),
+				PricePerGB:         types.FIL(ask.Price).Int64(),
+				VerifiedPricePerGB: types.FIL(ask.VerifiedPrice).Int64(),
+				MaxSize:            types.NewInt(uint64(ask.MaxPieceSize)).Int64(),
+				MinSize:            types.NewInt(uint64(ask.MinPieceSize)).Int64(),
 			}
 
 			if size := cctx.Int64("size"); size > 0 {
 				perEpoch := types.BigDiv(types.BigMul(ask.Price, types.NewInt(uint64(size))), types.NewInt(1<<30))
-				out.PricePerBlock = types.FIL(perEpoch).String()
+				out.PricePerBlock = types.FIL(perEpoch).Int64()
 
 				if duration := cctx.Int64("duration"); duration > 0 {
-					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).String()
+					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).Int64()
 				}
 			}
 

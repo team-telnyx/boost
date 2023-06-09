@@ -27,8 +27,8 @@ type TxMinerStorageAsk struct {
 	PricePerGB         int64  `json:"price_per_gb"`
 	TotalPrice         int64  `json:"total_price"`
 	VerifiedPricePerGB int64  `json:"verified_price_per_gb"`
-	MaxSize            int64  `json:"max_size"`
-	MinSize            int64  `json:"min_size"`
+	MaxSize            int64  `json:"max_size_bytes"`
+	MinSize            int64  `json:"min_size_bytes"`
 }
 
 type TxRetrievalDeal struct {

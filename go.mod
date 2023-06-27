@@ -30,7 +30,7 @@ require (
 	github.com/filecoin-project/go-address v1.1.0
 	github.com/filecoin-project/go-bitfield v0.2.4
 	github.com/filecoin-project/go-cbor-util v0.0.1
-	github.com/filecoin-project/go-commp-utils v0.1.3
+	github.com/filecoin-project/go-commp-utils v0.1.4
 	github.com/filecoin-project/go-data-transfer v1.15.4-boost
 	github.com/filecoin-project/go-fil-commcid v0.1.0
 	github.com/filecoin-project/go-fil-commp-hashhash v0.1.0
@@ -76,7 +76,7 @@ require (
 	github.com/ipld/go-car/v2 v2.7.0
 	github.com/ipld/go-ipld-prime v0.20.0
 	github.com/ipld/go-ipld-selector-text-lite v0.0.1
-	github.com/ipni/index-provider v0.11.1
+	github.com/ipni/index-provider v0.11.2
 	github.com/ipni/storetheindex v0.5.10
 	github.com/jbenet/go-random v0.0.0-20190219211222-123a90aedc0c
 	github.com/jpillora/backoff v1.0.0
@@ -320,7 +320,7 @@ require (
 	github.com/zondax/hid v0.9.1 // indirect
 	github.com/zondax/ledger-go v0.12.1 // indirect
 	go.uber.org/dig v1.15.0 // indirect
-	go.uber.org/zap v1.24.0 // indirect
+	go.uber.org/zap v1.24.0
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.7.0 // indirect

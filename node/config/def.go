@@ -65,7 +65,8 @@ func DefaultBoost() *Boost {
 		},
 
 		Graphql: GraphqlConfig{
-			Port: 8080,
+			ListenAddress: "127.0.0.1",
+			Port:          8080,
 		},
 
 		Tracing: TracingConfig{
@@ -97,7 +98,7 @@ func DefaultBoost() *Boost {
 
 			DealProposalLogDuration: Duration(time.Hour * 24),
 			RetrievalLogDuration:    Duration(time.Hour * 24),
-			StalledRetrievalTimeout: Duration(time.Minute * 30),
+			StalledRetrievalTimeout: Duration(time.Second * 30),
 
 			RetrievalPricing: &lotus_config.RetrievalPricing{
 				Strategy: RetrievalPricingDefaultMode,
@@ -125,6 +126,7 @@ func DefaultBoost() *Boost {
 			HttpTransferStallCheckPeriod:       Duration(30 * time.Second),
 			DealLogDurationDays:                30,
 			SealingPipelineCacheTimeout:        Duration(30 * time.Second),
+			FundsTaggingEnabled:                true,
 		},
 
 		LotusDealmaking: lotus_config.DealmakingConfig{
@@ -169,7 +171,7 @@ func DefaultBoost() *Boost {
 			MaxConcurrencyStorageCalls: 100,
 			GCInterval:                 lotus_config.Duration(1 * time.Minute),
 		},
-		IndexProvider: lotus_config.IndexProviderConfig{
+		IndexProvider: IndexProviderConfig{
 			Enable:               true,
 			EntriesCacheCapacity: 1024,
 			EntriesChunkSize:     16384,
@@ -177,6 +179,17 @@ func DefaultBoost() *Boost {
 			// format: "/indexer/ingest/<network-name>"
 			TopicName:         "",
 			PurgeCacheOnStart: false,
+
+			Announce: IndexProviderAnnounceConfig{
+				AnnounceOverHttp:   false,
+				DirectAnnounceURLs: []string{"https://cid.contact/ingest/announce"},
+			},
+
+			HttpPublisher: IndexProviderHttpPublisherConfig{
+				Enabled:        false,
+				PublicHostname: "",
+				Port:           3104,
+			},
 		},
 	}
 	return cfg

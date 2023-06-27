@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/filecoin-project/boost-gfm/piecestore"
@@ -26,6 +27,7 @@ import (
 	"github.com/filecoin-project/boost/transport"
 	"github.com/filecoin-project/dagstore"
 	"github.com/filecoin-project/lotus/api/v1api"
+	"github.com/filecoin-project/lotus/build"
 	lotus_repo "github.com/filecoin-project/lotus/node/repo"
 	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go"
@@ -261,9 +263,19 @@ func (r *resolver) DealNew(ctx context.Context) (<-chan *dealNewResolver, error)
 }
 
 // mutation: dealCancel(id): ID
-func (r *resolver) DealCancel(_ context.Context, args struct{ ID graphql.ID }) (graphql.ID, error) {
+func (r *resolver) DealCancel(ctx context.Context, args struct{ ID graphql.ID }) (graphql.ID, error) {
 	dealUuid, err := toUuid(args.ID)
 	if err != nil {
+		return args.ID, err
+	}
+
+	deal, err := r.dealsDB.ByID(ctx, dealUuid)
+	if err != nil {
+		return args.ID, err
+	}
+
+	if deal.IsOffline {
+		err = r.provider.CancelOfflineDealAwaitingImport(dealUuid)
 		return args.ID, err
 	}
 
@@ -517,14 +529,14 @@ func (dr *dealResolver) Retry() string {
 }
 
 func (dr *dealResolver) Message(ctx context.Context) string {
-	msg := dr.message(ctx, dr.ProviderDealState.Checkpoint)
+	msg := dr.message(ctx, dr.ProviderDealState.Checkpoint, dr.ProviderDealState.CheckpointAt)
 	if dr.ProviderDealState.Retry != types.DealRetryFatal && dr.ProviderDealState.Err != "" {
 		msg = "Paused at '" + msg + "': " + dr.ProviderDealState.Err
 	}
 	return msg
 }
 
-func (dr *dealResolver) message(ctx context.Context, checkpoint dealcheckpoints.Checkpoint) string {
+func (dr *dealResolver) message(ctx context.Context, checkpoint dealcheckpoints.Checkpoint, checkpointAt time.Time) string {
 	switch checkpoint {
 	case dealcheckpoints.Accepted:
 		if dr.IsOffline {
@@ -560,7 +572,9 @@ func (dr *dealResolver) message(ctx context.Context, checkpoint dealcheckpoints.
 	case dealcheckpoints.Transferred:
 		return "Ready to Publish"
 	case dealcheckpoints.Published:
-		return "Awaiting Publish Confirmation"
+		elapsedEpochs := uint64(time.Since(checkpointAt).Seconds()) / build.BlockDelaySecs
+		confidenceEpochs := build.MessageConfidence * 2
+		return fmt.Sprintf("Awaiting Publish Confirmation (%d/%d epochs)", elapsedEpochs, confidenceEpochs)
 	case dealcheckpoints.PublishConfirmed:
 		return "Adding to Sector"
 	case dealcheckpoints.AddedPiece:
@@ -601,8 +615,12 @@ func (dr *dealResolver) sealingState(ctx context.Context) string {
 		log.Warnw("error getting sealing status for sector", "sector", dr.SectorID, "error", err)
 		return "Sealer: Sealing"
 	}
-
-	return "Sealer: " + string(si.State)
+	for _, d := range si.Deals {
+		if d == dr.ProviderDealState.ChainDealID {
+			return "Sealer: " + string(si.State)
+		}
+	}
+	return fmt.Sprintf("Sealer: failed - deal not found in sector %d", si.SectorID)
 }
 
 func (dr *dealResolver) Logs(ctx context.Context) ([]*logsResolver, error) {

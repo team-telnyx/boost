@@ -22,7 +22,7 @@ var FlagJsonTx = &cli.BoolFlag{
 type TxDealStatus string
 
 type TxMinerStorageAsk struct {
-	Miner              string `json:"miner_address"`
+	Miner              string `json:"miner"`
 	PricePerBlock      int64  `json:"price_per_block"`
 	PricePerGB         int64  `json:"price_per_gb"`
 	TotalPrice         int64  `json:"total_price"`

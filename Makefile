@@ -129,7 +129,7 @@ update-react: validate-node-version
 build-go: boost devnet
 .PHONY: build-go
 
-build: build-go
+build: react build-go
 .PHONY: build
 
 calibnet: react calibnet-go

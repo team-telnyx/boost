@@ -1,4 +1,4 @@
-module github.com/filecoin-project/boost
+module github.com/team-telnyx/boost
 
 go 1.19
 
@@ -347,6 +347,7 @@ require (
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/filecoin-project/boost v1.7.3
 	github.com/filecoin-project/boost-gfm v1.26.5
 	github.com/filecoin-project/boost-graphsync v0.13.6
 	github.com/filecoin-project/go-data-transfer/v2 v2.0.0-rc4
@@ -356,7 +357,6 @@ require (
 require (
 	github.com/alexbrainman/goissue34681 v0.0.0-20191006012335-3fc7a47baff5 // indirect
 	github.com/google/pprof v0.0.0-20221203041831-ce31453925ec // indirect
-	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.2 // indirect
 	github.com/onsi/ginkgo/v2 v2.5.1 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
@@ -364,7 +364,8 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.1.1 // indirect
 	github.com/quic-go/quic-go v0.33.0 // indirect
 	github.com/quic-go/webtransport-go v0.5.2 // indirect
-	github.com/tidwall/gjson v1.14.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/ucarion/urlpath v0.0.0-20200424170820-7ccc79b76bbb // indirect
 	github.com/zyedidia/generic v1.2.1 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect

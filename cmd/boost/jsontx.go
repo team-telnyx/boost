@@ -23,10 +23,10 @@ type TxDealStatus string
 
 type TxMinerStorageAsk struct {
 	Miner              string `json:"miner"`
-	PricePerBlock      int64  `json:"price_per_block"`
-	PricePerGB         int64  `json:"price_per_gb"`
-	TotalPrice         int64  `json:"total_price"`
-	VerifiedPricePerGB int64  `json:"verified_price_per_gb"`
+	PricePerBlock      string `json:"price_per_block"`
+	PricePerGB         string `json:"price_per_gb"`
+	TotalPrice         string `json:"total_price"`
+	VerifiedPricePerGB string `json:"verified_price_per_gb"`
 	MaxSize            int64  `json:"max_size_bytes"`
 	MinSize            int64  `json:"min_size_bytes"`
 }

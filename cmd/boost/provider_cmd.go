@@ -192,18 +192,18 @@ var storageAskCmd = &cli.Command{
 		if cctx.Bool("jsontx") {
 			out := TxMinerStorageAsk{
 				Miner:              maddr.String(),
-				PricePerGB:         types.FIL(ask.Price).Int64(),
-				VerifiedPricePerGB: types.FIL(ask.VerifiedPrice).Int64(),
+				PricePerGB:         types.FIL(ask.Price).String(),
+				VerifiedPricePerGB: types.FIL(ask.VerifiedPrice).String(),
 				MaxSize:            types.NewInt(uint64(ask.MaxPieceSize)).Int64(),
 				MinSize:            types.NewInt(uint64(ask.MinPieceSize)).Int64(),
 			}
 
 			if size := cctx.Int64("size"); size > 0 {
 				perEpoch := types.BigDiv(types.BigMul(ask.Price, types.NewInt(uint64(size))), types.NewInt(1<<30))
-				out.PricePerBlock = types.FIL(perEpoch).Int64()
+				out.PricePerBlock = types.FIL(perEpoch).String()
 
 				if duration := cctx.Int64("duration"); duration > 0 {
-					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).Int64()
+					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).String()
 				}
 			}
 

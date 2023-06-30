@@ -200,7 +200,7 @@ var storageAskCmd = &cli.Command{
 
 			if size := cctx.Int64("size"); size > 0 {
 				perEpoch := types.BigDiv(types.BigMul(ask.Price, types.NewInt(uint64(size))), types.NewInt(1<<30))
-				out.PricePerBlock = types.FIL(perEpoch).String()
+				out.PricePerEpoch = types.FIL(perEpoch).String()
 
 				if duration := cctx.Int64("duration"); duration > 0 {
 					out.TotalPrice = types.FIL(types.BigMul(perEpoch, types.NewInt(uint64(duration)))).String()

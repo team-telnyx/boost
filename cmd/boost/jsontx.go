@@ -23,7 +23,7 @@ type TxDealStatus string
 
 type TxMinerStorageAsk struct {
 	Miner              string `json:"miner"`
-	PricePerBlock      string `json:"price_per_block"`
+	PricePerEpoch      string `json:"price_per_epoch"`
 	PricePerGB         string `json:"price_per_gb"`
 	TotalPrice         string `json:"total_price"`
 	VerifiedPricePerGB string `json:"verified_price_per_gb"`

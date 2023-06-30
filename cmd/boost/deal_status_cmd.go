@@ -136,6 +136,7 @@ var dealStatusCmd = &cli.Command{
 				Miner:      maddr.String(),
 				WalletAddr: walletAddr.String(),
 				Error:      resp.Error,
+				RootCID:    lstr,
 			}
 
 			if resp.DealStatus != nil {

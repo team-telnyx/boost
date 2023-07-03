@@ -32,6 +32,10 @@ type TxMinerStorageAsk struct {
 }
 
 type TxRetrievalDeal struct {
+	DealID           string `json:"id"`
+	PieceCID         string `json:"piece_cid"`
+	RootCID          string `json:"root_cid"`
+	Size             int64  `json:"size"`
 	OutputPath       string `json:"output_path"`
 	Message          string `json:"message"`
 	Miner            string `json:"miner"`

@@ -205,14 +205,14 @@ var retrieveCmd = &cli.Command{
 			miner,
 			proposal,
 			func(bytesReceived_ uint64) {
-				//printProgress(bytesReceived_)
+				// printProgress(bytesReceived_)
 			},
 		)
 		if err != nil {
 			return fmt.Errorf("Failed to retrieve content with candidate miner %s: %v", miner, err)
 		}
 
-		//printRetrievalStats(&FILRetrievalStats{RetrievalStats: *stats})
+		// printRetrievalStats(&FILRetrievalStats{RetrievalStats: *stats})
 
 		dservOffline := merkledag.NewDAGService(blockservice.New(bstore, offline.Exchange(bstore)))
 
@@ -266,7 +266,7 @@ var retrieveCmd = &cli.Command{
 			}
 			_ = car.WriteCar(ctx, dservOffline, []cid.Cid{c}, file)
 
-			//fmt.Println("Saved .car output to", output+".car")
+			// fmt.Println("Saved .car output to", output+".car")
 		} else {
 			// Otherwise write file as UnixFS File
 			ufsFile, err := unixfile.NewUnixfsFile(ctx, dservOffline, dnode)
@@ -278,18 +278,22 @@ var retrieveCmd = &cli.Command{
 				return err
 			}
 
-			//fmt.Println("Saved output to", output)
+			// fmt.Println("Saved output to", output)
 		}
 
 		if cctx.Bool("jsontx") {
 			out := TxRetrievalDeal{
+				DealID:           proposal.ID.String(),
+				PieceCID:         proposal.PieceCID.String(),
+				RootCID:          proposal.PayloadCID.String(),
+				Size:             int64(query.Size),
 				OutputPath:       output,
-				Miner:            miner.String(),
 				Message:          query.Message,
+				Miner:            miner.String(),
 				UnsealPrice:      query.UnsealPrice.String(),
-				CreatedAt:        time.Now().Format(time.RFC3339),
 				TransferDuration: stats.Duration.String(),
 				TransferAvgBPS:   int64(stats.AverageSpeed),
+				CreatedAt:        time.Now().Format(time.RFC3339),
 			}
 
 			return cmd.PrintJson(out)

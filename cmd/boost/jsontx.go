@@ -46,8 +46,9 @@ type TxRetrievalDeal struct {
 }
 
 type TxStorageDeal struct {
-	DealUUID string `json:"deal_uuid"`
-	DealID   string `json:"deal_id"`
+	DealUUID string       `json:"deal_uuid"`
+	DealID   string       `json:"deal_id"`
+	Status   TxDealStatus `json:"deal_status"`
 
 	Miner           string `json:"miner"`
 	MinerCollateral string `json:"miner_collateral"`

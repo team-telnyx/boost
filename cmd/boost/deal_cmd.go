@@ -263,7 +263,18 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 	}
 
 	// Create a deal proposal to storage provider using deal protocol v1.2.0 format
-	dealProposal, err := dealProposal(ctx, n, walletAddr, rootCid, abi.PaddedPieceSize(pieceSize), pieceCid, maddr, startEpoch, cctx.Int("duration"), cctx.Bool("verified"), providerCollateral, abi.NewTokenAmount(cctx.Int64("storage-price")))
+	dealProposal, err := dealProposal(ctx,
+		n,
+		walletAddr,
+		rootCid,
+		abi.PaddedPieceSize(pieceSize),
+		pieceCid,
+		maddr,
+		startEpoch,
+		cctx.Int("duration"),
+		cctx.Bool("verified"),
+		providerCollateral,
+		abi.NewTokenAmount(cctx.Int64("storage-price")))
 	if err != nil {
 		return fmt.Errorf("failed to create a deal proposal: %w", err)
 	}
@@ -315,14 +326,15 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 	if cctx.Bool("jsontx") {
 		out := TxStorageDeal{
 			DealUUID:        dealUuid.String(),
+			Status:          TxInProgress,
 			Miner:           maddr.String(),
+			MinerCollateral: dealProposal.Proposal.ProviderCollateral.String(),
 			WalletAddr:      walletAddr.String(),
 			RootCID:         rootCid.String(),
+			CarPullURL:      cctx.String("http-url"),
 			CommP:           dealProposal.Proposal.PieceCID.String(),
 			StartEpoch:      dealProposal.Proposal.StartEpoch.String(),
 			EndEpoch:        dealProposal.Proposal.EndEpoch.String(),
-			MinerCollateral: dealProposal.Proposal.ProviderCollateral.String(),
-			CarPullURL:      cctx.String("http-url"),
 			Accepted:        resp.Accepted,
 			Message:         resp.Message,
 			CreatedAt:       time.Now().Format(time.RFC3339),
@@ -352,7 +364,18 @@ func dealCmdAction(cctx *cli.Context, isOnline bool) error {
 	return nil
 }
 
-func dealProposal(ctx context.Context, n *clinode.Node, clientAddr address.Address, rootCid cid.Cid, pieceSize abi.PaddedPieceSize, pieceCid cid.Cid, minerAddr address.Address, startEpoch abi.ChainEpoch, duration int, verified bool, providerCollateral abi.TokenAmount, storagePrice abi.TokenAmount) (*market.ClientDealProposal, error) {
+func dealProposal(ctx context.Context,
+	n *clinode.Node,
+	clientAddr address.Address,
+	rootCid cid.Cid,
+	pieceSize abi.PaddedPieceSize,
+	pieceCid cid.Cid,
+	minerAddr address.Address,
+	startEpoch abi.ChainEpoch,
+	duration int,
+	verified bool,
+	providerCollateral abi.TokenAmount,
+	storagePrice abi.TokenAmount) (*market.ClientDealProposal, error) {
 	endEpoch := startEpoch + abi.ChainEpoch(duration)
 	// deal proposal expects total storage price for deal per epoch, therefore we
 	// multiply pieceSize * storagePrice (which is set per epoch per GiB) and divide by 2^30

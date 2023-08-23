@@ -2,7 +2,7 @@ name: Build boost
 
 on:
   push:
-    tags:
+    branches:
     - '*'
 
 jobs:

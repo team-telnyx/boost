@@ -7,11 +7,6 @@ import (
 	"strings"
 	"time"
 
-	flatfs "github.com/ipfs/go-ds-flatfs"
-	levelds "github.com/ipfs/go-ds-leveldb"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	"github.com/mitchellh/go-homedir"
-
 	"github.com/dustin/go-humanize"
 	clinode "github.com/filecoin-project/boost/cli/node"
 	"github.com/filecoin-project/boost/cmd"
@@ -21,12 +16,15 @@ import (
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/lotus/chain/types"
 	lcli "github.com/filecoin-project/lotus/cli"
-	"github.com/ipfs/go-blockservice"
+	"github.com/ipfs/boxo/blockservice"
+	blockstore "github.com/ipfs/boxo/blockstore"
+	offline "github.com/ipfs/boxo/exchange/offline"
+	"github.com/ipfs/boxo/files"
+	"github.com/ipfs/boxo/ipld/merkledag"
+	unixfile "github.com/ipfs/boxo/ipld/unixfs/file"
 	"github.com/ipfs/go-cid"
-	offline "github.com/ipfs/go-ipfs-exchange-offline"
-	"github.com/ipfs/go-libipfs/files"
-	"github.com/ipfs/go-merkledag"
-	unixfile "github.com/ipfs/go-unixfs/file"
+	flatfs "github.com/ipfs/go-ds-flatfs"
+	levelds "github.com/ipfs/go-ds-leveldb"
 	"github.com/ipld/go-car"
 	"github.com/ipld/go-ipld-prime"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
@@ -35,6 +33,7 @@ import (
 	"github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
 	textselector "github.com/ipld/go-ipld-selector-text-lite"
+	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 	"golang.org/x/xerrors"
@@ -165,7 +164,7 @@ var retrieveCmd = &cli.Command{
 		defer os.RemoveAll(bstoreTmpDir)
 
 		bstoreDatastore, err := flatfs.CreateOrOpen(bstoreTmpDir, flatfs.NextToLast(3), false)
-		bstore := blockstore.NewBlockstoreNoPrefix(bstoreDatastore)
+		bstore := blockstore.NewBlockstore(bstoreDatastore, blockstore.NoPrefix())
 		if err != nil {
 			return fmt.Errorf("could not open blockstore: %w", err)
 		}

@@ -69,10 +69,24 @@ func DefaultBoost() *Boost {
 			Port:          8080,
 		},
 
+		Monitoring: MonitoringConfig{
+			MpoolAlertEpochs: 30,
+		},
+
 		Tracing: TracingConfig{
 			Enabled:     false,
 			Endpoint:    "",
 			ServiceName: "boostd",
+		},
+
+		LocalIndexDirectory: LocalIndexDirectoryConfig{
+			Yugabyte: LocalIndexDirectoryYugabyteConfig{
+				Enabled: false,
+			},
+			ParallelAddIndexLimit: 4,
+			EmbeddedServicePort:   8042,
+			ServiceApiInfo:        "",
+			ServiceRPCTimeout:     Duration(15 * time.Minute),
 		},
 
 		ContractDeals: ContractDealsConfig{
@@ -127,6 +141,7 @@ func DefaultBoost() *Boost {
 			DealLogDurationDays:                30,
 			SealingPipelineCacheTimeout:        Duration(30 * time.Second),
 			FundsTaggingEnabled:                true,
+			EnableLegacyStorageDeals:           false,
 		},
 
 		LotusDealmaking: lotus_config.DealmakingConfig{

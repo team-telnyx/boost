@@ -10,18 +10,17 @@ import (
 	"github.com/filecoin-project/boostd-data/shared/cliutil"
 	"github.com/filecoin-project/go-address"
 
+	"github.com/filecoin-project/lotus/chain/types"
+	lcli "github.com/filecoin-project/lotus/cli"
+	"github.com/ipfs/go-cid"
+	"github.com/ipni/go-libipni/maurl"
+	"github.com/multiformats/go-multiaddr"
+	"github.com/urfave/cli/v2"
+
 	bcli "github.com/filecoin-project/boost/cli"
 	clinode "github.com/filecoin-project/boost/cli/node"
 	"github.com/filecoin-project/boost/cmd"
 	"github.com/filecoin-project/boost/retrievalmarket/lp2pimpl"
-
-	// TODO: This multiaddr util library should probably live in its own repo
-	multiaddrutil "github.com/filecoin-project/go-legs/httpsync/multiaddr"
-	"github.com/filecoin-project/lotus/chain/types"
-	lcli "github.com/filecoin-project/lotus/cli"
-	"github.com/ipfs/go-cid"
-	"github.com/multiformats/go-multiaddr"
-	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -421,7 +420,7 @@ var retrievalTransportsCmd = &cli.Command{
 func multiaddrToNative(proto string, ma multiaddr.Multiaddr) string {
 	switch proto {
 	case "http", "https":
-		u, err := multiaddrutil.ToURL(ma)
+		u, err := maurl.ToURL(ma)
 		if err != nil {
 			return ""
 		}

@@ -294,7 +294,6 @@ const RetrievalLogsCountQuery = gql`
     }
 `;
 
-
 const DealCancelMutation = gql`
     mutation AppDealCancelMutation($id: ID!) {
         dealCancel(id: $id)
@@ -398,6 +397,36 @@ const PiecesWithPayloadCidQuery = gql`
     }
 `;
 
+const FlaggedPiecesQuery = gql`
+    query AppFlaggedPiecesQuery($hasUnsealedCopy: Boolean, $cursor: BigInt, $offset: Int, $limit: Int) {
+        piecesFlagged(hasUnsealedCopy: $hasUnsealedCopy, cursor: $cursor, offset: $offset, limit: $limit) {
+            pieces {
+                CreatedAt
+                PieceCid
+                IndexStatus {
+                    Status
+                    Error
+                }
+                DealCount
+            }
+            totalCount
+            more
+        }
+    }
+`;
+
+const FlaggedPiecesCountQuery = gql`
+    query AppFlaggedPiecesCountQuery($hasUnsealedCopy: Boolean) {
+        piecesFlaggedCount(hasUnsealedCopy: $hasUnsealedCopy)
+    }
+`;
+
+const PieceBuildIndexMutation = gql`
+    mutation AppPieceBuildIndexMutation($pieceCid: String!) {
+        pieceBuildIndex(pieceCid: $pieceCid)
+    }
+`;
+
 const PieceStatusQuery = gql`
     query AppPieceStatusQuery($pieceCid: String!) {
         pieceStatus(pieceCid: $pieceCid) {
@@ -408,7 +437,7 @@ const PieceStatusQuery = gql`
             }
             Deals {
                 SealStatus {
-                    IsUnsealed
+                    Status
                     Error
                 }
                 Deal {
@@ -431,10 +460,36 @@ const PieceStatusQuery = gql`
                     Length
                 }
                 SealStatus {
-                    IsUnsealed
+                    Status
                     Error
                 }
             }
+        }
+    }
+`;
+
+const LIDQuery = gql`
+    query AppLIDQuery {
+        lid {
+            DealData {
+                Indexed
+                FlaggedUnsealed
+                FlaggedSealed
+            }
+            Pieces {
+                Indexed
+                FlaggedUnsealed
+                FlaggedSealed
+            }
+            SectorUnsealedCopies {
+                Unsealed
+                Sealed
+            }
+            SectorProvingState {
+                Active
+                Inactive
+            }
+            FlaggedPieces
         }
     }
 `;
@@ -618,18 +673,22 @@ const StorageAskUpdate = gql`
 `;
 
 const MpoolQuery = gql`
-    query AppMpoolQuery($local: Boolean!) {
-        mpool(local: $local) {
-            From
-            To
-            Nonce
-            Value
-            GasFeeCap
-            GasLimit
-            GasPremium
-            Method
-            Params
-            BaseFee
+    query AppMpoolQuery($alerts: Boolean!) {
+        mpool(alerts: $alerts) {
+            Count
+            Messages {
+                SentEpoch
+                From
+                To
+                Nonce
+                Value
+                GasFeeCap
+                GasLimit
+                GasPremium
+                Method
+                Params
+                BaseFee
+            }
         }
     }
 `;
@@ -677,7 +736,11 @@ export {
     RetrievalLogsCountQuery,
     PiecesWithRootPayloadCidQuery,
     PiecesWithPayloadCidQuery,
+    PieceBuildIndexMutation,
     PieceStatusQuery,
+    FlaggedPiecesQuery,
+    FlaggedPiecesCountQuery,
+    LIDQuery,
     StorageQuery,
     LegacyStorageQuery,
     FundsQuery,

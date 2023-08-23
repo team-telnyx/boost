@@ -62,8 +62,20 @@ your node if metadata log is disabled`,
 			Comment: ``,
 		},
 		{
+			Name: "Monitoring",
+			Type: "MonitoringConfig",
+
+			Comment: ``,
+		},
+		{
 			Name: "Tracing",
 			Type: "TracingConfig",
+
+			Comment: ``,
+		},
+		{
+			Name: "LocalIndexDirectory",
+			Type: "LocalIndexDirectoryConfig",
 
 			Comment: ``,
 		},
@@ -407,6 +419,13 @@ Any value less than 0 will result in use of default`,
 accepted boost will tag funds for that deal so that they cannot be used
 for any other deal.`,
 		},
+		{
+			Name: "EnableLegacyStorageDeals",
+			Type: "bool",
+
+			Comment: `Whether to enable legacy deals on the Boost node or not. We recommend keeping
+them disabled. These will be completely deprecated soon.`,
+		},
 	},
 	"FeeConfig": []DocField{
 		{
@@ -532,6 +551,64 @@ This is usually the same as the for the boost node.`,
 Note that this port must be open on the firewall.`,
 		},
 	},
+	"LocalIndexDirectoryConfig": []DocField{
+		{
+			Name: "Yugabyte",
+			Type: "LocalIndexDirectoryYugabyteConfig",
+
+			Comment: ``,
+		},
+		{
+			Name: "ParallelAddIndexLimit",
+			Type: "int",
+
+			Comment: `The maximum number of add index operations allowed to execute in parallel.
+The add index operation is executed when a new deal is created - it fetches
+the piece from the sealing subsystem, creates an index of where each block
+is in the piece, and adds the index to the local index directory.`,
+		},
+		{
+			Name: "EmbeddedServicePort",
+			Type: "uint64",
+
+			Comment: `The port that the embedded local index directory data service runs on.
+Set this value to zero to disable the embedded local index directory data service
+(in that case the local index directory data service must be running externally)`,
+		},
+		{
+			Name: "ServiceApiInfo",
+			Type: "string",
+
+			Comment: `The connect string for the local index directory data service RPC API eg "ws://localhost:8042"
+Set this value to "" if the local index directory data service is embedded.`,
+		},
+		{
+			Name: "ServiceRPCTimeout",
+			Type: "Duration",
+
+			Comment: `The RPC timeout when making requests to the boostd-data service`,
+		},
+	},
+	"LocalIndexDirectoryYugabyteConfig": []DocField{
+		{
+			Name: "Enabled",
+			Type: "bool",
+
+			Comment: ``,
+		},
+		{
+			Name: "ConnectString",
+			Type: "string",
+
+			Comment: `The yugabyte postgres connect string eg "postgresql://postgres:postgres@localhost"`,
+		},
+		{
+			Name: "Hosts",
+			Type: "[]string",
+
+			Comment: `The yugabyte cassandra hosts eg ["127.0.0.1"]`,
+		},
+	},
 	"LotusDealmakingConfig": []DocField{
 		{
 			Name: "PieceCidBlocklist",
@@ -629,6 +706,15 @@ see https://boost.filecoin.io/configuration/deal-filters for more details`,
 			Type: "*lotus_config.RetrievalPricing",
 
 			Comment: ``,
+		},
+	},
+	"MonitoringConfig": []DocField{
+		{
+			Name: "MpoolAlertEpochs",
+			Type: "int64",
+
+			Comment: `The number of epochs after which alert is generated for a local pending
+message in lotus mpool`,
 		},
 	},
 	"StorageConfig": []DocField{
@@ -1150,6 +1236,21 @@ Set to 0 to keep all mappings`,
 			Type: "FevmConfig",
 
 			Comment: ``,
+		},
+		{
+			Name: "Index",
+			Type: "IndexConfig",
+
+			Comment: ``,
+		},
+	},
+	"lotus_config.IndexConfig": []DocField{
+		{
+			Name: "EnableMsgIndex",
+			Type: "bool",
+
+			Comment: `EXPERIMENTAL FEATURE. USE WITH CAUTION
+EnableMsgIndex enables indexing of messages on chain.`,
 		},
 	},
 	"lotus_config.IndexProviderConfig": []DocField{
@@ -1723,8 +1824,7 @@ required to have expiration of at least the soonest-ending deal`,
 			Name: "MinTargetUpgradeSectorExpiration",
 			Type: "uint64",
 
-			Comment: `Setting this to a high value (for example to maximum deal duration - 1555200) will disable selection based on
-initial pledge - upgrade sectors will always be chosen based on longest expiration`,
+			Comment: `DEPRECATED: Target expiration is no longer used`,
 		},
 		{
 			Name: "CommittedCapacitySectorLifetime",
@@ -1853,6 +1953,16 @@ sending precommit messages to the chain individually`,
 
 			Comment: `network BaseFee below which to stop doing commit aggregation, instead
 submitting proofs to the chain individually`,
+		},
+		{
+			Name: "MaxSectorProveCommitsSubmittedPerEpoch",
+			Type: "uint64",
+
+			Comment: `When submitting several sector prove commit messages simultaneously, this option allows you to
+stagger the number of prove commits submitted per epoch
+This is done because gas estimates for ProveCommits are non deterministic and increasing as a large
+number of sectors get committed within the same epoch resulting in occasionally failed msgs.
+Submitting a smaller number of prove commits per epoch would reduce the possibility of failed msgs`,
 		},
 		{
 			Name: "TerminateBatchMax",

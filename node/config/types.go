@@ -38,12 +38,14 @@ type Boost struct {
 	// The connect string for the sealing RPC API (lotus miner)
 	SealerApiInfo string
 	// The connect string for the sector index RPC API (lotus miner)
-	SectorIndexApiInfo string
-	Dealmaking         DealmakingConfig
-	Wallets            WalletsConfig
-	Graphql            GraphqlConfig
-	Tracing            TracingConfig
-	ContractDeals      ContractDealsConfig
+	SectorIndexApiInfo  string
+	Dealmaking          DealmakingConfig
+	Wallets             WalletsConfig
+	Graphql             GraphqlConfig
+	Monitoring          MonitoringConfig
+	Tracing             TracingConfig
+	LocalIndexDirectory LocalIndexDirectoryConfig
+	ContractDeals       ContractDealsConfig
 
 	// Lotus configs
 	LotusDealmaking lotus_config.DealmakingConfig
@@ -266,6 +268,10 @@ type DealmakingConfig struct {
 	// accepted boost will tag funds for that deal so that they cannot be used
 	// for any other deal.
 	FundsTaggingEnabled bool
+
+	// Whether to enable legacy deals on the Boost node or not. We recommend keeping
+	// them disabled. These will be completely deprecated soon.
+	EnableLegacyStorageDeals bool
 }
 
 type ContractDealsConfig struct {
@@ -360,4 +366,36 @@ type StorageConfig struct {
 	// Disable this if you wish to manually handle the refresh. If manually managing the redeclare
 	// and it is not triggered, retrieval quality for users will be impacted.
 	RedeclareOnStorageListRefresh bool
+}
+
+type MonitoringConfig struct {
+	// The number of epochs after which alert is generated for a local pending
+	// message in lotus mpool
+	MpoolAlertEpochs int64
+}
+
+type LocalIndexDirectoryYugabyteConfig struct {
+	Enabled bool
+	// The yugabyte postgres connect string eg "postgresql://postgres:postgres@localhost"
+	ConnectString string
+	// The yugabyte cassandra hosts eg ["127.0.0.1"]
+	Hosts []string
+}
+
+type LocalIndexDirectoryConfig struct {
+	Yugabyte LocalIndexDirectoryYugabyteConfig
+	// The maximum number of add index operations allowed to execute in parallel.
+	// The add index operation is executed when a new deal is created - it fetches
+	// the piece from the sealing subsystem, creates an index of where each block
+	// is in the piece, and adds the index to the local index directory.
+	ParallelAddIndexLimit int
+	// The port that the embedded local index directory data service runs on.
+	// Set this value to zero to disable the embedded local index directory data service
+	// (in that case the local index directory data service must be running externally)
+	EmbeddedServicePort uint64
+	// The connect string for the local index directory data service RPC API eg "ws://localhost:8042"
+	// Set this value to "" if the local index directory data service is embedded.
+	ServiceApiInfo string
+	// The RPC timeout when making requests to the boostd-data service
+	ServiceRPCTimeout Duration
 }

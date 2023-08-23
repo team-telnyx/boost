@@ -25,21 +25,10 @@ jobs:
       run: go get -v ./...
 
     - name: Install OS dependencies
-      run: |
-        sudo apt-get install \
-              build-essential \
-              bzr \ 
-              pkg-config \
-              clang \
-              curl \
-              gcc \
-              git \
-              hwloc \
-              jq \
-              libhwloc-dev \ 
-              wget \
-              mesa-opencl-icd \
-              ocl-icd-opencl-dev
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential bzr pkg-config clang curl gcc git hwloc jq libhwloc-dev wget mesa-opencl-icd ocl-icd-opencl-dev
+        version: 1.0
 
     - name: Build binary from source
       run: make boost

@@ -1,0 +1,42 @@
+name: Build and release
+
+on:
+  push:
+    tags:
+    - "v*"
+
+jobs:
+  build-boost:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        go-version: '1.20'
+
+    - name: Check out local repository
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Retrieve Go dependencies
+      run: go get -v ./...
+
+    - name: Install OS dependencies
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential bzr pkg-config clang curl gcc git hwloc jq libhwloc-dev wget mesa-opencl-icd ocl-icd-opencl-dev
+        version: 1.0
+
+    - name: Build binary from source
+      run: make boost
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        fail_on_unmatched_files: true
+        files: boost

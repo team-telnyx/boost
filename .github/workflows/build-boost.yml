@@ -11,12 +11,13 @@ jobs:
     - name: Set up Node 18.x
       uses: actions/setup-node@v3
       with:
-        node-version: 18
+        node-version: '18'
 
     - name: Set up Go 1.x
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
-        go-version: ^1.20
+        token: ${{ secrets.GITHUB_TOKEN }}
+        go-version: '1.20'
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2

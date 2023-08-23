@@ -1,6 +1,9 @@
-name: Build boost binaries on new release
+name: Build boost
 
-on: [push]
+on:
+  push:
+    tags:
+    - '*'
 
 jobs:
   build:
@@ -27,19 +30,11 @@ jobs:
     - name: Get dependencies
       run: go get -v ./...
 
-    - name: Install OS dependencies
-      run: |
-        sudo apt-get install \
-              build-essential \
-              bzr pkg-config \
-              clang \
-              curl \
-              gcc git \
-              hwloc \
-              jq \
-              libhwloc-dev wget \
-              mesa-opencl-icd \
-              ocl-icd-opencl-dev
+    - name: Cache apt packages
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: build-essential bzr pkg-config clang curl gcc git hwloc jq libhwloc-dev wget mesa-opencl-icd ocl-icd-opencl-dev
+        version: 1.0
 
     - name: Build boost
       run: make boost

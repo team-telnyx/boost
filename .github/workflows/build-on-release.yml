@@ -1,9 +1,9 @@
-name: Build and release
+name: Build on release
 
 on:
-  push:
-    tags:
-    - "v*"
+  release:
+    types:
+    - published
 
 jobs:
   build-boost:
@@ -34,7 +34,7 @@ jobs:
     - name: Build binary from source
       run: make boost
 
-    - name: Release
+    - name: Publish asset to release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
